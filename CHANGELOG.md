@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed / 変更
+
+- Emitters sharing a tip bone now each use their own `linkBones` and bone settings (`boneStrength` and the rest). The bones follow the lowest-numbered emitter in the aim set when they start to turn, and keep following it until they are back at rest. The inspector no longer shows "Same bone as emitter {0}"; every emitter shows its own settings. Values that were hidden before now take effect, so the motion may change.
+- 同じ先端のボーンを持つ射出口でも、`linkBones` とボーン連動の設定(`boneStrength` など)は射出口ごとに効くようになりました。ボーンは、回り始める時に狙う組に入っている番号の最も若い射出口に従い、休みへ戻るまでその射出口のままです。インスペクターの「射出口 {0} と同じボーンです」の表示はなくなり、どの射出口にも設定の欄が出ます。これまで隠れていた射出口の値が効くので、動きが変わることがあります。
+- The pre-fire clip now plays to its end after the shot before moving to the post-fire clip (or rest); the part after the Animation Event is the delay before returning. Press **Sync Animator** on the rig again to update existing Animator Controllers.
+- 撃つ前のクリップは、撃った後も最後まで流れてから後のクリップ(無ければ休み)へ移ります。Animation Event より後ろの部分が、戻るまでの遅延になります。既存の Animator Controller は、rig の「Animator にそろえる」を押し直すと反映されます。
+- The emitter list in the `GunnerRig` inspector is now a reorderable list (drag to reorder, + / - to add or remove). Reordering changes the emitter numbers, so press **Sync Animator** again and update `useEmitters` on `GunnerHandController` and `emitterSwitches` and `firePayloads` on `GunnerAutoAim`.
+- `GunnerRig` のインスペクターの射出口の一覧を、ドラッグで並べ替えられるリストにしました(「+」「-」で足す・外す)。並べ替えると射出口の番号が変わるので、「Animator にそろえる」を押し直し、`GunnerHandController` の `useEmitters` と `GunnerAutoAim` の `emitterSwitches`・`firePayloads` も直してください。
+- The `GunnerEmitter` field `pivot` is now labelled "Target Transform" in the inspector and in the checks (the field itself is unchanged).
+- `GunnerEmitter` の `pivot` の表示名と点検の文言を「Target Transform」にしました(欄そのものは変わりません)。
+
+### Fixed / 修正
+
+- Aiming with an emitter that shares its tip bone with a lower-numbered emitter (for example when `GunnerAutoAim` picks it) no longer leaves the bones still.
+- 同じ先端のボーンを持つ射出口のうち、番号の最も若いもの以外で狙うと(`GunnerAutoAim` が別の射出口を選んだ時など)、ボーンが回らなかった不具合を直しました。
+
 ## [0.16.0] - 2026-11-22
 
 This version includes the breaking changes below (#30, including the removal of `streamJoin`) and raises the required Unity to 6000.0.67f1.

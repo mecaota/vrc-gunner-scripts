@@ -25,7 +25,7 @@ Download `com.mecaota.gunner-x.y.z.zip` from [Releases](https://github.com/mecao
 
 ## How shooting works
 
-1. **Emitters.** Each emitter is a `GunnerEmitter` component that holds its settings. The +Z axis of its `pivot` Transform is the shooting direction (the rest direction when nothing aims it). The order of the rig's `muzzles` list gives the emitter numbers. A rig has up to 16 emitters (`GunnerRig.MaxEmitters`). Each emitter can have its own `ParticleSystem` in `shotParticle` (World simulation space) for the visible shot. The editor tools place an emitter at `rig/muzzles/<name>`: the `GunnerEmitter` (and a VRC Parent Constraint when it follows a bone) is on `<name>`, and its child `Pivot` is the `pivot`. Do not use a Transform with a constraint as the `pivot`; the constraint overwrites the aim. While the constraint is locked, you cannot move `<name>` in edit mode; unlock it (or move `Pivot`) to adjust.
+1. **Emitters.** Each emitter is a `GunnerEmitter` component that holds its settings. The +Z axis of its `pivot` Transform is the shooting direction (the rest direction when nothing aims it). The order of the rig's `muzzles` list gives the emitter numbers. A rig has up to 16 emitters (`GunnerRig.MaxEmitters`). Each emitter can have its own `ParticleSystem` in `shotParticle` (World simulation space) for the visible shot. The editor tools place an emitter at `rig/muzzles/<name>`: the `GunnerEmitter` (and a VRC Parent Constraint when it follows a bone) is on `<name>`, and its child `Target Transform` is the `pivot` (the field is shown as Target Transform in the Inspector). Do not use a Transform with a constraint as the `pivot`; the constraint overwrites the aim. While the constraint is locked, you cannot move `<name>` in edit mode; unlock it (or move `Target Transform`) to adjust.
 2. **The rig.** `GunnerRig` owns everything else: aiming, hit tests, the synced hit records and the receiver list. It uses Manual sync, so it cannot share a GameObject with VRC Object Sync (put it on a child). Shooting takes ownership of the rig.
 3. **Single shots.** `Fire()` shoots once from every Single emitter in the aim set (all by default). `_FireWith(emitter, payload)` shoots a single shot from one emitter, whatever its fire mode, with an integer payload, and `_FireVolley(payload, mask, offsets)` picks the emitters with a bit mask and adds per-emitter angle offsets. A shot that hits travels at its emitter's `shotSpeed`; receivers hear about the hit when it arrives.
 4. **Streams.** A stream keeps emitting particles while it runs. `StartStream()` / `StopStream()` (or `_StartStreamWith(payload)`) start and stop it on the Stream emitters in the aim set. With no Stream emitter in the aim set, `StartStream()` does nothing. The rig needs a `GunnerStream` in its `stream` field. `StopStream()` only stops a stream this device started.
@@ -104,14 +104,14 @@ Each emitter's `linkBones` and bone fields apply to it alone. When emitters shar
 
 ### Pre-fire animation
 
-Set `fireAnimator` on the rig, then `preFireClip` (and optionally `postFireClip`) on each emitter, and press **Sync Animator** on the rig. A single shot from `_FireWith(emitter, payload)` then plays the clip and shoots when its Animation Event calls `_AnimFire` (`SendCustomEvent`). The clip plays to its end after the shot, so the part of the clip after the event is the delay before returning. Keep the clip short: a shot requested while the previous clip is still finishing waits for it, and is dropped if the wait passes 3 seconds (the pre-fire timeout). Emitters without `preFireClip` shoot at once.
+Set `fireAnimator` on the rig, then `preFireClip` (and optionally `postFireClip`) on each emitter, and press **Sync Animator** on the rig. A single shot from `_FireWith(emitter, payload)` then plays the clip and shoots when its Animation Event calls `_AnimFire` (`SendCustomEvent`). The clip plays to its end after the shot, so the part of the clip after the event is the delay before returning; `GunnerAutoAim` also keeps the aim and the linked bones until then. Until the clip ends, further `_FireWith` calls with a pre-fire clip are ignored, and a clip without the event (or whose event does not arrive) ends without a shot. A new shot during `postFireClip` cuts it short. Emitters without `preFireClip` shoot at once.
 
 - **Sync Animator** rebuilds, in the `fireAnimator`'s Animator Controller, every layer whose name starts with `Gunner_` and every parameter starting with `GunnerPre`: one bool `GunnerPre<n>` per emitter with a clip, and one layer per pre-fire clip. Each layer gets an Avatar Mask of the objects its clips animate, stored inside the controller. Other layers and parameters are left alone. The `Gunner_` layers go back where the first one was, so keep them together to keep their place among your layers. Edits to the generated layers are lost on the next press; adjust the clips instead.
 - Press it again after adding, removing or reordering emitters, or changing their clips. The rig's checks warn until you do.
 - Give emitters that move the same body part the same `preFireClip`; they then share one layer. With different clips, the upper layer wins.
 - Override Controllers are not supported.
-- Put the rig on the same GameObject as `fireAnimator`: Animation Events reach only that GameObject. If it is elsewhere, `_AnimFire` never arrives and the shot is dropped after `PreFireTimeout` (3 s) without firing.
-- Emitters that share a clip should have the same `postFireClip`; if they differ, the one on the lowest-numbered emitter is used.
+- Put the rig on the same GameObject as `fireAnimator`: Animation Events reach only that GameObject. If it is elsewhere, `_AnimFire` never arrives and the clip ends without a shot.
+- Each emitter plays its own `postFireClip`, also when it shares its `preFireClip` with others.
 
 ## Auto aim (`GunnerAutoAim`)
 
@@ -130,13 +130,13 @@ Setup:
 | `rig` | empty | The `GunnerRig` to drive. |
 | `zone` | empty = the BoxCollider on this GameObject | The box. |
 | `interval` | 0.2 | Seconds between target and aim updates. |
-| `fireInterval` | 3 | Seconds between shots. It starts aiming one or two ticks (`interval` each) before a shot is due. |
+| `fireInterval` | 3 | Seconds between shots, counted from one `_FireWith` to the next. It starts aiming one or two ticks (`interval` each) before a shot is due. With a pre-fire clip longer than this, the next shot waits for the clip to end. |
 | `aimHeight` | 0.7 | Aim height as a share of the target's eye height. |
 | `emitterSwitches` | empty | One mark GameObject per emitter, in emitter order. An emitter whose mark is inactive is not used; an empty slot or a missing entry is always used. With no usable emitter, it does not shoot. |
 
 How it works:
 
-- Only the rig's owner aims and shoots (`_FireWith` takes ownership of the rig, so letting every device shoot would make them fight over it). From one or two ticks before a shot is due, it picks, among all players whose feet are inside the box, the one nearest to the zone centre, then the usable emitter (see `emitterSwitches`) nearest to that player's aim point (walls and range are not checked), and calls `_SetAimEmitters(1 << emitter)` and `_SetAimTarget(point)`, then, once `fireInterval` has passed, `_FireWith(emitter, firePayloads[emitter])`. At any other time, and with nobody inside, it calls `ResetAim()` and `_SetAimEmitters(-1)` once, so the emitters return to rest. While the pre-fire animation plays, it keeps the aim.
+- Only the rig's owner aims and shoots (`_FireWith` takes ownership of the rig, so letting every device shoot would make them fight over it). From one or two ticks before a shot is due, it picks, among all players whose feet are inside the box, the one nearest to the zone centre, then the usable emitter (see `emitterSwitches`) nearest to that player's aim point (walls and range are not checked), and calls `_SetAimEmitters(1 << emitter)` and `_SetAimTarget(point)`, then, once `fireInterval` has passed, `_FireWith(emitter, firePayloads[emitter])`. At any other time, and with nobody inside, it calls `ResetAim()` and `_SetAimEmitters(-1)` once, so the emitters return to rest. Until the pre-fire clip ends (also after the shot), it keeps the aim.
 - When this device becomes the rig's owner, it waits `fireInterval` before its first shot, and carries on. A device that is not the owner never shoots or takes the rig; when it stops being the owner it only resets its own local aim (`ResetAim()`, `_SetAimEmitters(-1)`, which neither take the rig nor sync), so the new owner's synced aim shows.
 - Teleported, respawned and seated players count by where their feet are now.
 - The rig's owner (the local player on the owner's device) can be chosen as a target and hit too.
@@ -146,7 +146,7 @@ How it works:
 ## Quick start
 
 1. Right-click in the Hierarchy and choose **GameObject > Gunner > Add Gunner Rig**. This creates a rig with one emitter, its particles and a `GunnerStream`.
-2. Select the emitter's `Pivot` and turn it so +Z points where you want to shoot. Use **Add Emitter** or **Add Emitter At Body Part** for more.
+2. Select the emitter's `Target Transform` and turn it so +Z points where you want to shoot. Use **Add Emitter** or **Add Emitter At Body Part** for more.
 3. For fire and impact sounds and impact particles, set the AudioSources and impact particles on each `GunnerEmitter`. For anything else, add your own `GunnerHitReceiver`.
 4. Call `TriggerDown()` / `TriggerUp()` from your own script.
 5. Open **Tools > Gunner > Check Window** and fix anything it lists.
@@ -158,7 +158,7 @@ A sample prefab (`Prefab/GunnerRig.prefab`, `Prefab/GunnerHandController.prefab`
 Menus (Hierarchy right-click, under `GameObject/Gunner/`):
 
 - **Add Gunner Rig**: a new rig (or a child rig on an object with VRC Object Sync), with one emitter and a `GunnerStream`.
-- **Add Emitter**: an emitter at `rig/muzzles/<name>` (a `GunnerEmitter`, a child `Pivot` and its own particles), added to the rig's list. On a bone, it starts at the bone and follows it with a VRC Parent Constraint (offset = the pose when it was made). The bone can be outside the rig, in an armature next to it under the same Animator.
+- **Add Emitter**: an emitter at `rig/muzzles/<name>` (a `GunnerEmitter`, a child `Target Transform` and its own particles), added to the rig's list. On a bone, it starts at the bone and follows it with a VRC Parent Constraint (offset = the pose when it was made). The bone can be outside the rig, in an armature next to it under the same Animator.
 - **Add Emitter At Body Part**: right or left index fingertip, both fingertips, right or left palm, or mouth (needs a humanoid Animator). The emitter follows the bone in the same way.
 - **+ Add parent bone** (on the `GunnerEmitter` inspector, for `linkBones`): an emitter made by these commands has an empty `linkBones`; with the list empty, the button adds the bone its VRC Parent Constraint follows, and each press after that adds the parent of the first one.
 
@@ -189,7 +189,7 @@ Spider                (has the Animator)
 └─ GunnerRig
    └─ muzzles
       └─ mouth      GunnerEmitter + VRC Parent Constraint (source: the bone)
-         └─ Pivot   the pivot: the aim turns this
+         └─ Target Transform  the pivot: the aim turns this
 ```
 
 ## Changes in 0.13.0

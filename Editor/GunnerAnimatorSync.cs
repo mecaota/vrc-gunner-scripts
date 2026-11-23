@@ -95,8 +95,8 @@ namespace Mecaota.Gunner.EditorTools
             }
             foreach (int i in emitters)
                 Timing(rest.AddTransition(preState), false, 0.05f).AddCondition(AnimatorConditionMode.If, 0f, ParamPrefix + i);
-            var release = Timing(preState.AddTransition(after), false, 0.05f);
-            foreach (int i in emitters) release.AddCondition(AnimatorConditionMode.IfNot, 0f, ParamPrefix + i);
+            // 条件を付けない: 撃った後にクリップの残りを流し切る。合図の後すぐ次の撃つ前が来ても、Rest から入り直せる。
+            Timing(preState.AddTransition(after), true, 0.05f);
         }
 
         // パスが0件のマスクは何も絞らないので、カーブの無いクリップには、無いパスを1つ入れて何も通さないようにする。

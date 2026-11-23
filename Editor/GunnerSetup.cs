@@ -130,7 +130,7 @@ namespace Mecaota.Gunner.EditorTools
         }
 
         /// <summary>
-        /// rig の muzzles の下に射出口(+Z = 休み方向)を作り、rig の一覧に足す。GunnerEmitter は射出口に、弾の粒子は狙いで回す子 Pivot に付ける。
+        /// rig の muzzles の下に射出口(+Z = 休み方向)を作り、rig の一覧に足す。GunnerEmitter は射出口に、弾の粒子は狙いで回す子 Target Transform に付ける。
         /// bone があれば、射出口に VRC Parent Constraint を付けて、今の姿勢のままそのボーンに付いて行かせる。
         /// </summary>
         public static GunnerEmitter AddEmitter(GunnerRig rig, Transform bone, Vector3 position, Quaternion rotation, string name = "Emitter")
@@ -138,7 +138,7 @@ namespace Mecaota.Gunner.EditorTools
             var muzzles = Muzzles(rig);
             var go = GunnerEditorUtil.CreateChild(muzzles, GunnerEditorUtil.UniqueChildName(muzzles, name));
             go.transform.SetPositionAndRotation(position, rotation);
-            var pivot = GunnerEditorUtil.CreateChild(go.transform, "Pivot").transform;
+            var pivot = GunnerEditorUtil.CreateChild(go.transform, "Target Transform").transform;
             var ps = GunnerEditorUtil.CreateShotParticles(pivot);
             var muzzle = GunnerEditorUtil.AddUdon<GunnerEmitter>(go);
             GunnerEditorUtil.Edit(muzzle, so =>

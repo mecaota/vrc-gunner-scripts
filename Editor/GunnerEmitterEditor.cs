@@ -135,7 +135,7 @@ namespace Mecaota.Gunner.EditorTools
             DrawHandles(muzzle, RigOf(muzzle, out int index) != null ? index : -1, muzzle.transform);
         }
 
-        /// <summary>selected: 選んでいる物。それ自身が向ける部分なら、Unity のハンドルとぶつかるので姿勢のハンドルを出さない。</summary>
+        /// <summary>selected: 選んでいる物。それ自身が Target Transform なら、Unity のハンドルとぶつかるので姿勢のハンドルを出さない。</summary>
         internal static void DrawHandles(GunnerEmitter muzzle, int index, Transform selected)
         {
             if (muzzle == null || muzzle.pivot == null) return;

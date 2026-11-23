@@ -45,7 +45,7 @@ namespace Mecaota.Gunner.EditorTools
             Heading("GunnerEmitter.card.aim");
             Field("aimMaxAngle");
             DrawBones(muzzle);
-            DrawFollow(muzzle, rig, index);
+            DrawFollow(muzzle);
             if (targets.Length == 1)
             {
                 var followed = Followed(muzzle);
@@ -81,20 +81,9 @@ namespace Mecaota.Gunner.EditorTools
             }
         }
 
-        // 追従の値は連動ごとに1組で、実行時は同じ先端のボーンを持つ射出口のうち番号の最も若いものの値を使う。
-        void DrawFollow(GunnerEmitter muzzle, GunnerRig rig, int index)
+        void DrawFollow(GunnerEmitter muzzle)
         {
-            var tip = Tip(muzzle);
-            if (tip == null) return;
-            if (targets.Length == 1 && rig != null)
-            {
-                int first = System.Array.FindIndex(rig.muzzles, m => Tip(m) == tip);
-                if (first >= 0 && first < index)
-                {
-                    EditorGUILayout.LabelField(string.Format(T("GunnerEmitter.follow.shared"), first), EditorStyles.wordWrappedMiniLabel);
-                    return;
-                }
-            }
+            if (Tip(muzzle) == null) return;
             var fold = serializedObject.FindProperty("boneStrength");
             fold.isExpanded = EditorGUILayout.Foldout(fold.isExpanded, T("GunnerEmitter.card.follow"), true);
             if (!fold.isExpanded) return;

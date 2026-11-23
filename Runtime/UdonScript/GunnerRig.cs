@@ -95,7 +95,7 @@ namespace Mecaota.Gunner
         private Transform[][] linkBones;
         private int[] fireModes;
         private float[] aimMaxAngles;
-        // 連動ごとに、その連動の最初の射出口(linkLead)の値だけを使う。
+        // 連動ごとに、ボーンをつかんだ時の先頭の射出口(linkLead)の値を使う。
         private float[] boneStrengths;
         private float[] boneYawMaxes;
         private float[] bonePitchUpMaxes;
@@ -233,7 +233,7 @@ namespace Mecaota.Gunner
         private Transform[] chainBone;
         private Quaternion[] chainBase;     // ボーンの休みのローカル回転(Animator が書いたら取り直す)
         private Quaternion[] chainWritten;
-        private Quaternion[] chainRel;      // ボーンから見た、先頭の射出口の休みの座標系(起動時に1回)。先頭のボーンは restRel と同じ
+        private Quaternion[] chainRel;      // ボーンから見た、先端のボーンの休みの座標系(起動時に1回)。先頭の射出口は掛ける時に選ぶ
         // 連動ごとの、鎖のいちばん上のボーンから先頭のボーンまでの道(間の動かないボーンも含む)。休みの座標系を作るのに使う。
         private int[] linkPathStart;
         private int[] linkPathCount;
@@ -529,8 +529,7 @@ namespace Mecaota.Gunner
             for (int b = 0; b < count; b++)
             {
                 Ancestors(links[b], anc);
-                int lead = linkLead[b];
-                Quaternion restFrame = emitters[lead].rotation;
+                Quaternion restFrame = links[b].rotation;
                 linkChainStart[b] = ci;
                 linkPathStart[b] = pi;
                 for (int a = top[b]; a >= 0; a--)
@@ -554,7 +553,7 @@ namespace Mecaota.Gunner
                 chainBone[ci] = bone;
                 chainBase[ci] = bone.localRotation;
                 chainWritten[ci] = chainBase[ci];
-                chainRel[ci] = restRel[lead];
+                chainRel[ci] = Quaternion.identity;
                 pathBone[pi] = bone;
                 pathChain[pi] = ci;
                 ci++;
@@ -1810,14 +1809,14 @@ namespace Mecaota.Gunner
             {
                 Transform bone = links[b];
                 if (bone == null) continue;
-                int lead = linkLead[b];
                 int cs = linkChainStart[b];
-                int cn = linkChainCount[b];
-                int ce = cs + cn;
+                int ce = cs + linkChainCount[b];
                 if (!linkHeld[b])
                 {
                     if (!on || mode == AimNone) continue;
                     for (int j = cs; j < ce; j++) if (chainBone[j] != null) chainBase[j] = chainBone[j].localRotation;
+                    // つかんでいる間は替えない(追従の角度は先頭の射出口の休みの座標系の値なので)。
+                    for (int e = emitterCount - 1; e >= 0; e--) if (linkOf[e] == b && InAim(e, emit)) linkLead[b] = e;
                     linkHeld[b] = true;
                     followYaw[b] = 0f;
                     followPitch[b] = 0f;
@@ -1835,6 +1834,9 @@ namespace Mecaota.Gunner
                         if (local != chainWritten[j]) chainBase[j] = local;
                     }
                 }
+                int lead = linkLead[b];
+                int cn = 0;
+                for (int j = cs; j < ce; j++) if (Listed(lead, chainBone[j])) cn++;
                 float ty = 0f;
                 float tp = 0f;
                 bool aimed = on && mode != AimNone && InAim(lead, emit) && ValidEmitter(lead) && Wish(mode, vec, lead);
@@ -1897,11 +1899,12 @@ namespace Mecaota.Gunner
                 Quaternion q = wide ? AxisTurn(turnYaw[b], turnPitch[b]) : Quaternion.Euler(-turnPitch[b], turnYaw[b], 0f);
                 if (cn > 1) q = Quaternion.Slerp(Quaternion.identity, q, 1f / cn);
                 // 回転を先頭の射出口の休みの座標系で表し、各ボーンのローカル空間へ移す。どのボーンも同じ軸・同じ角度で曲がる。
+                // 先頭の射出口の linkBones に無いボーンは休みのまま。
                 for (int j = cs; j < ce; j++)
                 {
                     Transform cb = chainBone[j];
-                    if (cb == null) continue;
-                    Quaternion rel = chainRel[j];
+                    if (cb == null || !Listed(lead, cb)) continue;
+                    Quaternion rel = chainRel[j] * restRel[lead];
                     cb.localRotation = chainBase[j] * rel * q * Quaternion.Inverse(rel);
                     chainWritten[j] = cb.localRotation;
                 }
@@ -2050,6 +2053,8 @@ namespace Mecaota.Gunner
 
         // 射出口 i が狙う組に入っているか(0 = 全部)。
         private bool InAim(int i, int mask) { return mask == 0 || (mask & (1 << i)) != 0; }
+
+        private bool Listed(int e, Transform t) { return t != null && ClaimIndex(t, linkBones[e], linkBones[e].Length) >= 0; }
 
         // 狙う組(0 = 全部)のうち、撃ち方が連射の射出口。
         private int StreamSet(int aim) { return (aim == 0 ? -1 : aim) & streamMask; }

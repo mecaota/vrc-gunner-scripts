@@ -11,7 +11,6 @@ namespace Mecaota.Gunner.EditorTools
         internal const string HandlesPref = "Mecaota.Gunner.ShowHandles";
         ReorderableList list;
 
-        // 「外す」は一覧から外すだけで、GameObject は消さない。
         void OnEnable()
         {
             var rig = (GunnerRig)target;
@@ -30,6 +29,7 @@ namespace Mecaota.Gunner.EditorTools
                     GunnerSetup.AddEmitter(rig, null, rig.transform.position, rig.transform.rotation);
                     GUIUtility.ExitGUI();
                 },
+                // 「外す」は一覧から外すだけで、GameObject は消さない。
                 onRemoveCallback = l =>
                 {
                     GunnerEditorUtil.RemoveAt(l.serializedProperty, l.index);

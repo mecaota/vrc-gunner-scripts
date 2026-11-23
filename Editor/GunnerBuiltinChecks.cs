@@ -97,13 +97,13 @@ namespace Mecaota.Gunner.EditorTools
             var controller = GunnerAnimatorSync.ControllerOf(rig);
             if (controller == null) return;
             var want = new HashSet<(string, Motion, Motion)>(GunnerAnimatorSync.Groups(muzzles).SelectMany(g =>
-                g.Select(i => (GunnerAnimatorSync.ParamPrefix + i, (Motion)muzzles[i].preFireClip, (Motion)muzzles[g[0]].postFireClip))));
+                g.Select(i => (GunnerAnimatorSync.ParamPrefix + i, (Motion)muzzles[i].preFireClip, (Motion)muzzles[i].postFireClip))));
             var names = new HashSet<string>(controller.parameters.Select(p => p.name));
             var have = new HashSet<(string, Motion, Motion)>();
             foreach (var layer in controller.layers)
             {
-                if (!layer.name.StartsWith(GunnerAnimatorSync.LayerPrefix) || layer.stateMachine == null || layer.stateMachine.defaultState == null) continue;
-                foreach (var t in layer.stateMachine.defaultState.transitions)
+                if (!layer.name.StartsWith(GunnerAnimatorSync.LayerPrefix) || layer.stateMachine == null) continue;
+                foreach (var t in layer.stateMachine.anyStateTransitions)
                 {
                     var pre = t.destinationState;
                     if (pre == null || t.conditions.Length == 0 || !names.Contains(t.conditions[0].parameter)) continue;

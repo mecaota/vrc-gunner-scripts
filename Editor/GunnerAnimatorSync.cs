@@ -52,8 +52,7 @@ namespace Mecaota.Gunner.EditorTools
             var muzzles = rig.muzzles ?? new GunnerEmitter[0];
             var groups = Groups(muzzles);
             foreach (int i in groups.SelectMany(g => g)) controller.AddParameter(ParamPrefix + i, AnimatorControllerParameterType.Bool);
-            foreach (var group in groups)
-                AddLayer(controller, muzzles[group[0]].preFireClip, muzzles[group[0]].postFireClip, group, label);
+            foreach (var group in groups) AddLayer(controller, muzzles, group, label);
 
             // 押し直しても、手で足したレイヤーとの上下を変えない。
             if (at >= 0)
@@ -71,32 +70,42 @@ namespace Mecaota.Gunner.EditorTools
             AssetDatabase.SaveAssetIfDirty(controller);
         }
 
-        static void AddLayer(AnimatorController controller, AnimationClip pre, AnimationClip post, int[] emitters, string label)
+        static void AddLayer(AnimatorController controller, GunnerEmitter[] muzzles, int[] emitters, string label)
         {
+            var pre = muzzles[emitters[0]].preFireClip;
             string name = controller.MakeUniqueLayerName(LayerPrefix + pre.name);
             var machine = new AnimatorStateMachine { name = name, hideFlags = HideFlags.HideInHierarchy };
             AssetDatabase.AddObjectToAsset(machine, controller);
             Undo.RegisterCreatedObjectUndo(machine, label);
             // Rest は Write Defaults で既定の姿勢を書くので、マスクが無いと、ほかのレイヤーが動かすボーンまで止める。
-            var mask = MaskOf(name, pre, post);
+            var mask = MaskOf(name, emitters.Select(i => muzzles[i].postFireClip).Prepend(pre).ToArray());
             AssetDatabase.AddObjectToAsset(mask, controller);
             Undo.RegisterCreatedObjectUndo(mask, label);
             controller.AddLayer(new AnimatorControllerLayer { name = name, stateMachine = machine, avatarMask = mask, defaultWeight = 1f });
 
             var rest = machine.AddState("Rest");
-            var preState = machine.AddState(pre.name);
-            preState.motion = pre;
-            var after = rest;
-            if (post != null)
+            // 撃った後のクリップを射出口ごとに選べるよう、撃つ前の状態は後のクリップごとに分ける(レイヤーは分けない)。
+            foreach (var byPost in emitters.GroupBy(i => muzzles[i].postFireClip))
             {
-                after = machine.AddState(post.name);
-                after.motion = post;
-                Timing(after.AddTransition(rest), true, 0.1f);
+                var preState = machine.AddState(pre.name);
+                preState.motion = pre;
+                var after = rest;
+                if (byPost.Key != null)
+                {
+                    after = machine.AddState(byPost.Key.name);
+                    after.motion = byPost.Key;
+                    Timing(after.AddTransition(rest), true, 0.1f);
+                }
+                // Any State から入る: 後のクリップの途中でもすぐ撃つ前へ移る(rig はクリップの長さだけ待つので、入るのが遅れると合図を逃す)。
+                foreach (int i in byPost)
+                {
+                    var enter = Timing(machine.AddAnyStateTransition(preState), false, 0.05f);
+                    enter.canTransitionToSelf = false;
+                    enter.AddCondition(AnimatorConditionMode.If, 0f, ParamPrefix + i);
+                }
+                // 条件を付けない: 撃った後もクリップを最後まで流す。
+                Timing(preState.AddTransition(after), true, 0.05f);
             }
-            foreach (int i in emitters)
-                Timing(rest.AddTransition(preState), false, 0.05f).AddCondition(AnimatorConditionMode.If, 0f, ParamPrefix + i);
-            // 条件を付けない: 撃った後にクリップの残りを流し切る。合図の後すぐ次の撃つ前が来ても、Rest から入り直せる。
-            Timing(preState.AddTransition(after), true, 0.05f);
         }
 
         // パスが0件のマスクは何も絞らないので、カーブの無いクリップには、無いパスを1つ入れて何も通さないようにする。

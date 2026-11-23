@@ -70,7 +70,7 @@ namespace Mecaota.Gunner
 
         private void Step(float now)
         {
-            // 撃つ前のアニメを待っている間は、狙いを保つ。
+            // 撃つ前のクリップが終わるまでは、狙いを保つ。
             if (rig._IsPreFiring()) return;
             // 撃つ前の1〜2 tick から狙い始め、間隔が来た tick で撃つ(ボーンが向く時間を取る。フレームのずれで狙う tick が抜けないよう、窓は tick 2つ分)。それ以外は休みの向きへ戻す。
             float waited = now - lastFireAt;

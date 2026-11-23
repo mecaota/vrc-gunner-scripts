@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace Mecaota.Gunner.EditorTools
@@ -8,12 +9,37 @@ namespace Mecaota.Gunner.EditorTools
     public class GunnerRigEditor : GunnerInspectorBase
     {
         internal const string HandlesPref = "Mecaota.Gunner.ShowHandles";
-        const float RemoveWidth = 48f;
+        ReorderableList list;
+
+        // 「外す」は一覧から外すだけで、GameObject は消さない。
+        void OnEnable()
+        {
+            var rig = (GunnerRig)target;
+            list = new ReorderableList(serializedObject, serializedObject.FindProperty("muzzles"), true, false, true, true)
+            {
+                drawElementCallback = (rect, i, active, focused) =>
+                {
+                    var element = list.serializedProperty.GetArrayElementAtIndex(i);
+                    rect.y += 2f;
+                    rect.height = EditorGUIUtility.singleLineHeight;
+                    EditorGUI.PropertyField(rect, element, RowLabel(element.objectReferenceValue as GunnerEmitter, i));
+                },
+                onCanAddCallback = l => l.count < GunnerRig.MaxEmitters,
+                onAddCallback = l =>
+                {
+                    GunnerSetup.AddEmitter(rig, null, rig.transform.position, rig.transform.rotation);
+                    GUIUtility.ExitGUI();
+                },
+                onRemoveCallback = l =>
+                {
+                    GunnerEditorUtil.RemoveAt(l.serializedProperty, l.index);
+                    l.index = Mathf.Min(l.index, l.count - 1);
+                },
+            };
+        }
 
         protected override void DrawBody()
         {
-            var rig = (GunnerRig)target;
-
             bool open = Foldout("GunnerRig.section.emitters");
             var muzzles = serializedObject.FindProperty("muzzles");
             if (targets.Length == 1) CountAt(GUILayoutUtility.GetLastRect(), muzzles.arraySize);
@@ -21,16 +47,8 @@ namespace Mecaota.Gunner.EditorTools
             {
                 if (targets.Length == 1)
                 {
-                    for (int i = 0; i < muzzles.arraySize; i++) DrawRow(rig, muzzles.GetArrayElementAtIndex(i), i);
-                    using (new EditorGUI.DisabledScope(muzzles.arraySize >= GunnerRig.MaxEmitters))
-                    {
-                        if (GUILayout.Button(T("GunnerRig.emitters.add")))
-                        {
-                            GunnerSetup.AddEmitter(rig, null, rig.transform.position, rig.transform.rotation);
-                            GUIUtility.ExitGUI();
-                        }
-                    }
-                    EditorGUILayout.LabelField(T("GunnerRig.emitters.removeNote"), EditorStyles.wordWrappedMiniLabel);
+                    list.DoLayoutList();
+                    EditorGUILayout.LabelField(T("GunnerRig.emitters.numberNote"), EditorStyles.wordWrappedMiniLabel);
                 }
                 else
                     EditorGUILayout.HelpBox(T("GunnerRig.emitters.multi"), MessageType.Info);
@@ -67,19 +85,6 @@ namespace Mecaota.Gunner.EditorTools
         {
             using (new EditorGUI.DisabledScope(true))
                 EditorGUI.IntField(new Rect(row.xMax - 40f, row.y, 40f, EditorGUIUtility.singleLineHeight), n);
-        }
-
-        // 「外す」は一覧から外すだけで、GameObject は消さない。
-        void DrawRow(GunnerRig rig, SerializedProperty element, int i)
-        {
-            var row = EditorGUILayout.GetControlRect();
-            var label = RowLabel(element.objectReferenceValue as GunnerEmitter, i);
-            EditorGUI.PropertyField(new Rect(row.x, row.y, row.width - RemoveWidth - 4f, row.height), element, label);
-            if (GUI.Button(new Rect(row.xMax - RemoveWidth, row.y, RemoveWidth, row.height), T("GunnerRig.emitters.remove")))
-            {
-                GunnerEditorUtil.Edit(rig, so => GunnerEditorUtil.RemoveAt(so.FindProperty("muzzles"), i));
-                GUIUtility.ExitGUI();
-            }
         }
 
         static GUIContent RowLabel(GunnerEmitter muzzle, int i)

@@ -85,7 +85,8 @@ namespace Mecaota.Gunner.EditorTools
 
             var rest = machine.AddState("Rest");
             // 撃った後のクリップを射出口ごとに選べるよう、撃つ前の状態は後のクリップごとに分ける(レイヤーは分けない)。
-            foreach (var byPost in emitters.GroupBy(i => muzzles[i].postFireClip))
+            // fake null と本物の null を同じ組にする。
+            foreach (var byPost in emitters.GroupBy(i => muzzles[i].postFireClip != null ? muzzles[i].postFireClip : null))
             {
                 var preState = machine.AddState(pre.name);
                 preState.motion = pre;

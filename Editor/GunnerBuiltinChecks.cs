@@ -91,13 +91,16 @@ namespace Mecaota.Gunner.EditorTools
             }
         }
 
+        // エディターの空の参照(fake null)を本物の null にそろえる。タプルの比較は両者を等しいとみなさない。
+        static Motion Real(Motion m) { return m != null ? m : null; }
+
         // 押した後に射出口やクリップを変えると、撃つ前のアニメが流れないか、別の射出口のアニメが流れる。
         static void PreFireSynced(GunnerRig rig, GunnerEmitter[] muzzles, List<GunnerCheck> into)
         {
             var controller = GunnerAnimatorSync.ControllerOf(rig);
             if (controller == null) return;
             var want = new HashSet<(string, Motion, Motion)>(GunnerAnimatorSync.Groups(muzzles).SelectMany(g =>
-                g.Select(i => (GunnerAnimatorSync.ParamPrefix + i, (Motion)muzzles[i].preFireClip, (Motion)muzzles[i].postFireClip))));
+                g.Select(i => (GunnerAnimatorSync.ParamPrefix + i, Real(muzzles[i].preFireClip), Real(muzzles[i].postFireClip)))));
             var names = new HashSet<string>(controller.parameters.Select(p => p.name));
             var have = new HashSet<(string, Motion, Motion)>();
             foreach (var layer in controller.layers)
@@ -108,7 +111,7 @@ namespace Mecaota.Gunner.EditorTools
                     var pre = t.destinationState;
                     if (pre == null || t.conditions.Length == 0 || !names.Contains(t.conditions[0].parameter)) continue;
                     var after = pre.transitions.Length > 0 ? pre.transitions[0].destinationState : null;
-                    have.Add((t.conditions[0].parameter, pre.motion, after != null ? after.motion : null));
+                    have.Add((t.conditions[0].parameter, Real(pre.motion), after != null ? Real(after.motion) : null));
                 }
             }
             if (!want.SetEquals(have))

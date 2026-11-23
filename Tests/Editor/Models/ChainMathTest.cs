@@ -53,6 +53,7 @@ namespace Mecaota.Gunner.Tests.Models
             var restW = World(baseLocal);
             Quaternion F = restW[3] * emitterLocal;              // 射出口の休みの座標系(emitter の親 = lead)
             Quaternion restRelLead = Inv(restW[3]) * restW[3] * emitterLocal; // = Inverse(bone.rotation) * parentRot * restLocal
+            // GunnerRig は chainRel を先端のボーン基準で持ち、使う時に restRel[lead] を掛ける。この式と同値。
             var chainRel = new Quaternion[4];
             for (int i = 0; i < 4; i++) chainRel[i] = i == 3 ? restRelLead : Inv(restW[i]) * F;
             int n = 3;

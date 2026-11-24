@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-11-25
+
 ### Fixed / 修正
 
 - A single shot requested while the post-fire clip was blending back to rest could miss its signal and not fire. The switch to rest is now instant, so end `postFireClip` in the rest pose. Press **Sync Animator** on the rig again.

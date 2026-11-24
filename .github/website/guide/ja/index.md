@@ -74,46 +74,43 @@ Gunner は、VRChat のワールド向けのギミックです。アバターで
 
 ![シーンビュー。Box Collider の緑の枠が銃を囲んでいる](../img/ch2-02-scene-box-collider.png)
 
-## 3. rig を足す
+## 3. GunnerController と射出口を付ける
 
-1. `Gun` を選ぶ。
-2. メニューの `GameObject > Gunner > Add Gunner Rig` を選ぶ。
+1. `Gun` の子に空の GameObject を作り、名前を `GunnerController` にする。
+2. `GunnerController` に GunnerController を付ける。
+3. `GunnerController` の子に空の GameObject を作り、名前を `Emitter` にする。
+4. `Emitter` に GunnerEmitter を付ける。
+5. GunnerEmitter のインスペクターの上のほうに、点検の行が 3 つ出る。それぞれの「直す(Fix)」を押す。
+   - 「Target Rotation Transform の 1 行目(射出の向き)が空です」: 1 行目に `Emitter` 自身が入ります。
+   - 「射出口 Emitter にパーティクルがありません(当たりは記録されます)」: `Emitter` の子に、弾のパーティクル `Shot` ができます。
+   - 「どの GunnerController の射出口の一覧にも入っていません」: `GunnerController` の「射出口(Emitters)」に `Emitter` が入ります。
 
-この操作 1 回で、次の階層ができます。
+次の階層ができます。
 
 ```
 Gun
 └ GunnerController
-   ├ muzzles
-   │  └ Emitter
-   │     └ Target Rotation Transform
-   │        └ Shot
-   └ Parts
+   └ Emitter
+      └ Shot
 ```
 
-- `GunnerController`: 全体をまとめる部品です。
-- `Emitter`: 弾の出る「場所」です。4 章で銃口へ動かします。
-- `Target Rotation Transform`: 弾の「向き」です。+Z が撃つ向きです。GunnerEmitter の「Target Rotation Transform」欄に入っています。
+- `GunnerController`: 全体をまとめる部品です。VRC Object Sync と同じ GameObject には置けないので、`Gun` の子に置きます。
+- `Emitter`: 弾の出る場所と向きです。+Z が撃つ向きです。4 章で銃口へ動かします。
 - `Shot`: 弾のパーティクルです。
-- `Parts`: 連射の部品(GunnerStream)です。
-
-`Gun` に VRC Object Sync があるので、rig は `Gun` の子に作られます。
 
 UdonBehaviour の Sync Method が Continuous と表示されても、そのままでかまいません。`Gun` の VRC Object Sync に合った値です。
 
-![ヒエラルキー。Gun の下に GunnerController、muzzles、Emitter、Target Rotation Transform、Shot、Parts ができている](../img/ch3-02-hierarchy-rig.png)
+![ヒエラルキー。Gun の下に GunnerController、Emitter、Shot がある](../img/ch3-02-hierarchy-rig.png)
 
-![GunnerController のインスペクター。「射出口」に Emitter、「連射の部品」に Parts が入っている](../img/ja/ch3-03a-inspector-gunnerrig.png)
+![GunnerController のインスペクター。「射出口」の 0 番に Emitter が入っている](../img/ja/ch3-03a-inspector-gunnerrig.png)
 
-![Emitter のインスペクター(GunnerEmitter)。すべて初期値](../img/ja/ch3-03b-inspector-gunneremitter.png)
-
-![Parts のインスペクター(GunnerStream)。設定する欄は「言語」だけ](../img/ja/ch3-03c-inspector-parts-gunnerstream.png)
+![Emitter のインスペクター(GunnerEmitter)。Target Rotation Transform の 1 行目に Emitter、「パーティクル」に Shot が入っている](../img/ja/ch3-03b-inspector-gunneremitter.png)
 
 ![シーンビュー。Emitter を選んだ状態。まだ銃の原点(銃の後ろ端)にあり、撃つ向きの破線が銃口へ伸びている](../img/ch3-04-scene-emitter-selected.png)
 
 ## 4. 射出口を銃口に合わせる
 
-射出口は、できた直後は `Gun` の原点にあります。これを銃口の先へ動かします。動かすのは `Emitter`(場所)です。`Target Rotation Transform` は動かしません。
+`Emitter` は、作った直後は `Gun` の原点にあります。これを銃口の先へ動かします。
 
 1. `Emitter` を選ぶ。
 2. 「位置(Position)」を (0, 0, 0.255) にする。
@@ -141,7 +138,7 @@ UdonBehaviour の Sync Method が Continuous と表示されても、そのま�
 
 GunnerPickupInput の「Pickup」と、GunnerHandController の「移動ロック(Move hold)」は、空のままにします。
 
-![GunnerPickupInput のインスペクター。「Controller」に Gun が入り、「撃てる手」が「どちらでも」になっている](../img/ja/ch5-01a-inspector-pickupinput.png)
+![GunnerPickupInput のインスペクター。「Hand Controller」に Gun が入り、「撃てる手」が「どちらでも」になっている](../img/ja/ch5-01a-inspector-pickupinput.png)
 
 ![GunnerHandController のインスペクター。「GunnerController」と「入力」が入り、「移動ロック」は空](../img/ja/ch5-01b-inspector-handcontroller.png)
 
@@ -162,7 +159,7 @@ GunnerPickupInput の「Pickup」と、GunnerHandController の「移動ロッ�
 
 弾の見た目は、`Shot` の Particle System で変えます。
 
-1. `Emitter/Target Rotation Transform/Shot` を選ぶ。
+1. `Emitter/Shot` を選ぶ。
 2. Particle System の「開始時の色(Start Color)」を変える。
 3. 「開始サイズ(Start Size)」を変える。
 4. 「トレイル(Trails)」の「生存期間(Lifetime)」を変える。
@@ -201,7 +198,7 @@ GunnerPickupInput の「Pickup」と、GunnerHandController の「移動ロッ�
 
 連射の弾を 1 本の線につなげるかどうかは、GunnerEmitter ではなく、その射出口の `Shot` の Particle System で決めます。
 
-1. 撃ち方を変えた射出口の下の `Target Rotation Transform/Shot` を選ぶ(射出口が `Emitter_1` なら `Emitter_1/Target Rotation Transform/Shot`)。
+1. 撃ち方を変えた射出口の下の `Shot` を選ぶ(射出口が `Emitter_1` なら `Emitter_1/Shot`)。
 2. 「トレイル(Trails)」にチェックを入れて、「モード(Mode)」を「リボン(Ribbon)」にする。
 3. 「レンダラー(Renderer)」の「レンダーモード(Render Mode)」を「なし(None)」にする。粒は見えなくなり、線だけが残ります。
 
@@ -231,19 +228,18 @@ GunnerPickupInput の「Pickup」と、GunnerHandController の「移動ロッ�
 
 射出口をもう 1 つ足して、別の設定にします。
 
-1. `GunnerController` を選ぶ。`Gun` を選んだままだと、次のメニューは使えません。
-2. メニューの `GameObject > Gunner > Add Emitter` を選ぶ。
-3. `muzzles` の下に `Emitter_1` ができたことを確かめる。
-4. `Emitter_1` の「位置(Position)」を (0, 0, 0.255) にする。新しい射出口は rig の原点にできるので、4 章と同じように銃口へ動かします。
-5. `Emitter_1/Target Rotation Transform/Shot` の色や大きさを変える(7 章)。
-6. `Emitter_1` の「撃ち方(Fire mode)」を変える(8 章)。
+1. `GunnerController` の子に空の GameObject を作り、名前を `Emitter_1` にする。
+2. `Emitter_1` に GunnerEmitter を付け、3 章と同じく 3 つの行の「直す(Fix)」を押す。`Emitter_1` は「射出口(Emitters)」の 1 番に入ります。
+3. `Emitter_1` の「位置(Position)」を (0, 0, 0.255) にする(4 章)。
+4. `Emitter_1/Shot` の色や大きさを変える(7 章)。
+5. `Emitter_1` の「撃ち方(Fire mode)」を変える(8 章)。
 
 どの射出口で撃つかは、GunnerHandController の「射出口の番号(Emitter index)」で選びます。
 
-- 番号は 0 から始まります。`Emitter` が 0、`Emitter_1` が 1 です。
+- 番号は、GunnerController の「射出口」の並び順で、0 から始まります。`Emitter` が 0、`Emitter_1` が 1 です。
 - -1 にすると、引き金 1 回で全部の射出口が同時に撃ちます。
 
-![ヒエラルキー。muzzles の下に Emitter と Emitter_1 がある(10 章の FireSound も写っている)](../img/ch9-01-hierarchy-two-emitters.png)
+![ヒエラルキー。GunnerController の下に Emitter と Emitter_1 がある(10 章の FireSound も写っている)](../img/ch9-01-hierarchy-two-emitters.png)
 
 ![GunnerHandController の欄。「射出口の番号」が 0](../img/ja/ch9-02-inspector-handcontroller-emitter-index.png)
 
@@ -259,7 +255,7 @@ GunnerPickupInput の「Pickup」と、GunnerHandController の「移動ロッ�
 
 ### 着弾音と着弾パーティクル
 
-着弾の演出は、rig の外に置きます。rig の中に置くと、Check Window に警告が出ます。
+着弾の演出は、`GunnerController` の外に置きます。中に置くと、Check Window に警告が出ます。
 
 1. 一番上の階層に空の GameObject を作り、名前を `ImpactSound` にする。`FireSound` と同じ設定の AudioSource(Play On Awake を切り、Spatial Blend を 1 にする)と VRC Spatial Audio Source を付ける。
 2. 一番上の階層に Particle System を作り、名前を `ImpactSparks` にする。次のように設定する。

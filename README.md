@@ -25,10 +25,10 @@ Download `com.mecaota.gunner-x.y.z.zip` from [Releases](https://github.com/mecao
 
 ## How shooting works
 
-1. **Emitters.** Each emitter is a `GunnerEmitter` component that holds its settings. The +Z axis of its `pivot` Transform is the shooting direction (the rest direction when nothing aims it). The order of the rig's `muzzles` list gives the emitter numbers. A rig has up to 16 emitters (`GunnerController.MaxEmitters`). Each emitter can have its own `ParticleSystem` in `shotParticle` (World simulation space) for the visible shot. The editor tools place an emitter at `rig/muzzles/<name>`: the `GunnerEmitter` (and a VRC Parent Constraint when it follows a bone) is on `<name>`, and its child `Target Rotation Transform` is the `pivot` (the field is shown as Target Rotation Transform in the Inspector). Do not use a Transform with a constraint as the `pivot`; the constraint overwrites the aim. While the constraint is locked, you cannot move `<name>` in edit mode; unlock it (or move `Target Rotation Transform`) to adjust.
+1. **Emitters.** Each emitter is a `GunnerEmitter` component that holds its settings. Row 1 of its Target Rotation Transform list (`turns`) is the aim: shots leave from it, and its +Z axis is the shooting direction (the rest direction when nothing aims it). Put the emitter's own Transform in row 1. The order of the rig's `muzzles` list gives the emitter numbers. A rig has up to 16 emitters (`GunnerController.MaxEmitters`). Each emitter can have its own `ParticleSystem` in `shotParticle` (World simulation space) for the visible shot.
 2. **The rig.** `GunnerController` owns everything else: aiming, hit tests, the synced hit records and the receiver list. It uses Manual sync, so it cannot share a GameObject with VRC Object Sync (put it on a child). Shooting takes ownership of the rig.
 3. **Single shots.** `Fire()` shoots once from every Single emitter in the aim set (all by default). `_FireWith(emitter, payload)` shoots a single shot from one emitter, whatever its fire mode, with an integer payload, and `_FireVolley(payload, mask, offsets)` picks the emitters with a bit mask and adds per-emitter angle offsets. A shot that hits travels at its emitter's `shotSpeed`; receivers hear about the hit when it arrives.
-4. **Streams.** A stream keeps emitting particles while it runs. `StartStream()` / `StopStream()` (or `_StartStreamWith(payload)`) start and stop it on the Stream emitters in the aim set. With no Stream emitter in the aim set, `StartStream()` does nothing. The rig needs a `GunnerStream` in its `stream` field. `StopStream()` only stops a stream this device started.
+4. **Streams.** A stream keeps emitting particles while it runs. `StartStream()` / `StopStream()` (or `_StartStreamWith(payload)`) start and stop it on the Stream emitters in the aim set. With no Stream emitter in the aim set, `StartStream()` does nothing. `StopStream()` only stops a stream this device started.
 5. **Trigger helpers.** Each emitter has a fire mode (`fireMode`: Single or Stream). `TriggerDown()` calls `StartStream()` and then `Fire()`. `TriggerUp()` calls `StopStream()`.
 6. **Hit records.** Each hit becomes a record that the rig syncs to everyone. The sync always holds 16 records (`SyncSlots`, a ring); `maxHits` (1-16) only limits how many this device uses, so Android can use fewer and still match PC. Receivers read the current hit from the rig's `hit*` fields: `hitKind` (`KindWorld`, `KindMoving`, `KindPlayer`), `hitIndex` (moving object index or playerId), `hitBone`, `hitPoint`, `hitLocal`, `hitEmitter`, `hitPayload`, `hitStream`, `hitReplay` (restored for a late joiner; skip effects) and `hitResolved`.
 
@@ -63,25 +63,29 @@ On each `GunnerEmitter`:
 
 | Field | Default | Meaning |
 |---|---|---|
-| `pivot` | empty | The Transform the aim turns and shots leave from. |
+| `turns` (Target Rotation Transform) | no rows | Row 1: the aim (shots leave from it, +Z = rest direction). Rows 2 and on: linked bones, tip to root. |
+| `turnLimits` (Limit) | no rows (a new row starts at 60) | Turn limit in degrees per row. Row 1: from the rest direction. A bone row: per bone. 0 = does not turn. |
 | `fireMode` | Single | Single or Stream: how the emitter shoots on `TriggerDown` and from the hand controller. |
 | `shotSpeed` | 25 | Metres per second. |
 | `maxRange` | 30 | Metres. |
 | `castRadius` | 0.05 | Hit test thickness (metres). |
 | `preFireClip` / `postFireClip` | empty | Clips played before and after a single shot (see Pre-fire animation). Empty `preFireClip` = shoot at once. |
-| `aimMaxAngle` | 0 | Aim limit in degrees from the rest direction (0 = 60). |
 | `streamRate` | 12 | Particles per second. |
 | `streamHitMode` | Stop at first hit | Stop at first hit (the first hit also clears the emitter's flying particles), or Keep hitting. |
 | `streamHitInterval` | 0.25 | Keep hitting: seconds between records. |
 | `streamCollide` | On | Whether the stream records hits. `_SetCollision(false)` switches it off for all emitters at runtime. |
-| `linkBones` | empty | Bones the aim turns, root to tip. The last one is the tip; the others must be its ancestors. Empty = no link. |
 | `boneStrength` | 1 | Share of the aim the bones take (0-1). |
-| `boneYawMax` / `bonePitchUpMax` / `bonePitchDownMax` | 30 / 30 / 15 | Per-bone limits in degrees. |
 | `boneSmooth` / `boneMinSpeed` / `boneMaxSpeed` | 10 / 30 / 0 | Follow speed. `boneMaxSpeed` 0 = no limit. |
 
-Shots hit the layers in the emitter's particle system's **Collision > Collides With**, even when the Collision module is off; player layers are ignored there. Shots always hit players, including the rig's owner. An emitter without a particle system hits no layers (it can still hit players). The rig copies the emitters' values when it starts. In Play mode in the editor, a change on a `GunnerEmitter` takes effect at once for single shots, sounds, `castRadius` and the like. The values the stream (`GunnerStream`) reads (`shotSpeed`, `maxRange`, `streamRate`, `streamHitMode`, `streamHitInterval`), the fire mode, `streamCollide`, `linkBones` and the rest pose apply from the next Play. `pivot` and `shotParticle` change for single shots at once, but the stream and the rest pose use the old ones until the next Play. To be sure, Play again; to switch stream collision at runtime, use `_SetCollision(on)`. To join the stream into one line, turn on Trails on the emitter's particle system and set **Trails > Mode** to Ribbon. With Trails off, or Mode at Particles, the stream is not joined. The line's width is the particle system's own **Trails > Width over Trail**, over the whole line. A stream started again soon after it stopped joins the last particles of the previous one. If single shots share the particle system, they leave no trail while Mode is Ribbon; do not share it, or set Mode to Particles. Do not share one particle system between emitters that stream, or the Ribbon joins them across the emitters; use one per emitter.
+Shots hit the layers in the emitter's particle system's **Collision > Collides With**, even when the Collision module is off; player layers are ignored there. Shots always hit players, including the rig's owner. An emitter without a particle system hits no layers (it can still hit players). The rig copies the emitters' values when it starts. In Play mode in the editor, a change on a `GunnerEmitter` takes effect at once, except the fire mode, `streamCollide`, the Target Rotation Transform list, the stream's `streamRate`, `maxRange` and `shotSpeed`, and whether the particle system's Collision module is on, which apply from the next Play. To be sure, Play again; to switch stream collision at runtime, use `_SetCollision(on)`. To join the stream into one line, turn on Trails on the emitter's particle system and set **Trails > Mode** to Ribbon. With Trails off, or Mode at Particles, the stream is not joined. The line's width is the particle system's own **Trails > Width over Trail**, over the whole line. A stream started again soon after it stopped joins the last particles of the previous one. If single shots share the particle system, they leave no trail while Mode is Ribbon; do not share it, or set Mode to Particles. Do not share one particle system between emitters that stream, or the Ribbon joins them across the emitters; use one per emitter.
 
-Each emitter's `linkBones` and bone fields apply to it alone. When emitters share a tip bone, the bones follow one of them at a time: the lowest-numbered one in the aim set when the bones start to turn. It stays in charge until the bones are back at rest, and the other emitters on that bone point the same way meanwhile.
+### Bones
+
+- **Following a bone.** Add a VRC Position Constraint to the emitter's GameObject, with the bone as its Source. It moves the emitter but leaves its rotation to the aim, so the emitter can stay in its own row 1. Do not use a VRC Parent Constraint on a Transform in the list; it overwrites the aim.
+- **Rest direction.** The rest direction turns with the emitter's parent (for example the body), but not with a bone that only an animation turns. To make it follow such a bone, add the bone to the list, or put a child GameObject under the bone and use it as row 1 (no constraint needed).
+- **Linked bones.** Rows 2 and on turn with the aim: row 2 is the tip bone, and rows 3 and on must be its ancestors. The aim angle is split evenly across the bones, each up to its row's limit. They turn while bone follow is on (`boneFollow`, `BoneFollowOn`). `boneStrength` and the follow speeds are one set per emitter.
+
+Each emitter's list and bone fields apply to it alone. When emitters share a tip bone, the bones follow one of them at a time: the lowest-numbered one in the aim set when the bones start to turn. It stays in charge until the bones are back at rest, and the other emitters on that bone point the same way meanwhile.
 
 ### Built-in sounds and impact particles
 
@@ -97,7 +101,7 @@ Each emitter's `linkBones` and bone fields apply to it alone. When emitters shar
 
 - The fire sound source plays where it is (a stream start uses the first Stream emitter in the aim set with a fire sound source); place it near the emitter. The impact sound source and particles are moved to the hit point; place impact sound sources outside the rig, or moving them would move part of the rig. A source plays one sound at a time; the next sound restarts it. Records restored for a late joiner (`fireReplay`, `hitReplay`) and hits whose target is gone (`!hitResolved`) stay silent and show no particles.
 - There is no repeated fire sound during a stream; only the stream start plays the fire sound.
-- To shoot two kinds of shots from one place (for example a bullet and a web from the mouth), add two `GunnerEmitter`s there with separate `pivot` Transforms. Do not use the same Transform as the pivot of two emitters; they overwrite each other's aim every frame.
+- To shoot two kinds of shots from one place (for example a bullet and a web from the mouth), add two `GunnerEmitter`s there on separate GameObjects. Do not put the same Transform in row 1 of two emitters; they overwrite each other's aim every frame.
 - `TriggerDown()` and the hand controller's `emitter = -1` shoot from every emitter in the aim set at once, each in its own fire mode. `Fire()` shoots only the Single emitters. To shoot one kind only, use `_FireWith(emitter, payload)`, or narrow the aim set with `_SetAimEmitters(mask)` / `GunnerHandController.useEmitters`.
 - The hand-held ball aims at the point straight ahead of it, as far as the range (`maxRange`) of its `emitter`, at least 1 m. With `emitter = -1`, emitter 0's range is used. With an emitter number, only that emitter aims and shoots while the ball is held (`useEmitters` is ignored).
 - Udon cannot add `VRC_SpatialAudioSource` at runtime. Add it to the AudioSources in the editor.
@@ -145,8 +149,8 @@ How it works:
 
 ## Quick start
 
-1. Right-click in the Hierarchy and choose **GameObject > Gunner > Add Gunner Rig**. This creates a rig with one emitter, its particles and a `GunnerStream`.
-2. Select the emitter's `Target Rotation Transform` and turn it so +Z points where you want to shoot. Use **Add Emitter** or **Add Emitter At Body Part** for more.
+1. Make an empty GameObject and add `GunnerController`. It cannot share a GameObject with VRC Object Sync; use a child.
+2. For each emitter, make a child GameObject of the rig and add `GunnerEmitter`. In its inspector, press **Fix** on each check: this puts the emitter in row 1 of its Target Rotation Transform, adds `Shot` particles under it, and adds it to the rig's **Emitters** list. Turn it so +Z points where you want to shoot.
 3. For fire and impact sounds and impact particles, set the AudioSources and impact particles on each `GunnerEmitter`. For anything else, add your own `GunnerHitReceiver`.
 4. Call `TriggerDown()` / `TriggerUp()` from your own script.
 5. Open **Tools > Gunner > Check Window** and fix anything it lists.
@@ -155,12 +159,7 @@ A sample prefab (`Prefab/GunnerController.prefab`, `Prefab/GunnerHandController.
 
 ## Editor tools
 
-Menus (Hierarchy right-click, under `GameObject/Gunner/`):
-
-- **Add Gunner Rig**: a new rig (or a child rig on an object with VRC Object Sync), with one emitter and a `GunnerStream`.
-- **Add Emitter**: an emitter at `rig/muzzles/<name>` (a `GunnerEmitter`, a child `Target Rotation Transform` and its own particles), added to the rig's list. On a bone, it starts at the bone and follows it with a VRC Parent Constraint (offset = the pose when it was made). The bone can be outside the rig, in an armature next to it under the same Animator.
-- **Add Emitter At Body Part**: right or left index fingertip, both fingertips, right or left palm, or mouth (needs a humanoid Animator). The emitter follows the bone in the same way.
-- **+ Add parent bone** (on the `GunnerEmitter` inspector, for `linkBones`): an emitter made by these commands has an empty `linkBones`; with the list empty, the button adds the bone its VRC Parent Constraint follows, and each press after that adds the parent of the first one.
+The lists in the inspectors (Emitters, Receivers, Moving objects, Target Rotation Transform) work like the Sources of a VRC Constraint: drag to reorder, + adds an empty row, - removes the selected row. They cannot be edited while several objects are selected.
 
 **Tools > Gunner > Check Window** lists problems in every UdonSharp component of the open scenes. Click a row to select the object; **Fix** repairs what it can. The same checks also show in each inspector.
 
@@ -179,6 +178,10 @@ Both are in `Mecaota.Gunner.EditorTools`. Call them from an `[InitializeOnLoad]`
 
 See [CHANGELOG.md](CHANGELOG.md) for every version.
 
+## Changes in Unreleased
+
+Breaking: `GunnerRig` is renamed `GunnerController`, and `GunnerStream` is merged into it. The emitter's `pivot`, `linkBones` and limits are now one Target Rotation Transform list; press **Fix** on each emitter in the Check Window to move the old values. The `GameObject > Gunner` menus are removed; add the components by hand (see Quick start). Emitters follow bones with a VRC Position Constraint (see "Bones").
+
 ## Changes in 0.15.0
 
 Breaking: each emitter is now a `GunnerEmitter` component, and the rig's per-emitter arrays are gone. Emitters sit under `rig/muzzles` and follow bones with a VRC Parent Constraint. Old values are lost on update; note them first and see the migration steps in CHANGELOG.md.
@@ -186,7 +189,7 @@ Breaking: each emitter is now a `GunnerEmitter` component, and the rig's per-emi
 ```
 Spider                (has the Animator)
 ├─ Armature            (the bone is here)
-└─ GunnerController
+└─ GunnerRig
    └─ muzzles
       └─ mouth      GunnerEmitter + VRC Parent Constraint (source: the bone)
          └─ Pivot   the pivot: the aim turns this
@@ -220,7 +223,7 @@ Removals and clean-up (see CHANGELOG.md for the full list). `GunnerSounds` is re
 ## Changes in 0.6.0
 
 - `GunnerAutoAim`: aim at and shoot players whose feet are inside a box (see "Auto aim").
-- Built-in fire and impact sounds on `GunnerController` (see "Built-in sounds and impact particles"). Empty clips = silent, the same as before. `GunnerSounds` is unchanged; clips on both play twice.
+- Built-in fire and impact sounds on `GunnerRig` (see "Built-in sounds and impact particles"). Empty clips = silent, the same as before. `GunnerSounds` is unchanged; clips on both play twice.
 
 ## Changes in 0.5.0
 

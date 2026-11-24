@@ -2,7 +2,6 @@ using System.Linq;
 using UdonSharpEditor;
 using UnityEditor;
 using UnityEngine;
-using VRC.SDK3.Dynamics.Constraint.Components;
 
 namespace Mecaota.Gunner.EditorTools
 {
@@ -46,11 +45,6 @@ namespace Mecaota.Gunner.EditorTools
             Field("aimMaxAngle");
             DrawBones(muzzle);
             DrawFollow(muzzle);
-            if (targets.Length == 1)
-            {
-                var followed = Followed(muzzle);
-                EditorGUILayout.LabelField(T("GunnerEmitter.followed"), followed != null ? followed.name : T("GunnerEmitter.followed.none"));
-            }
         }
 
         void Fields(params string[] names)
@@ -64,13 +58,13 @@ namespace Mecaota.Gunner.EditorTools
             EditorGUILayout.LabelField(T(key), EditorStyles.boldLabel);
         }
 
-        // 親のボーンは根元側に足す。空のときは追従先のボーンを先端にする。
+        // 親のボーンは根元側に足す。
         void DrawBones(GunnerEmitter muzzle)
         {
             var bones = Field("linkBones");
             if (targets.Length > 1) return;
             var list = muzzle.linkBones ?? new Transform[0];
-            Transform next = list.Length == 0 ? Followed(muzzle) : list[0] != null ? list[0].parent : null;
+            Transform next = list.Length > 0 && list[0] != null ? list[0].parent : null;
             using (new EditorGUI.DisabledScope(next == null))
             {
                 if (GUILayout.Button(T("GunnerEmitter.bones.add")))
@@ -117,13 +111,6 @@ namespace Mecaota.Gunner.EditorTools
         {
             var list = muzzle != null ? muzzle.linkBones : null;
             return list != null && list.Length > 0 ? list[list.Length - 1] : null;
-        }
-
-        /// <summary>射出口の VRC Parent Constraint の最初の Source。無ければ null。</summary>
-        internal static Transform Followed(GunnerEmitter muzzle)
-        {
-            var c = muzzle.GetComponent<VRCParentConstraint>();
-            return c != null && c.Sources.Count > 0 ? c.Sources[0].SourceTransform : null;
         }
 
         // rig の AimLimit と同じ決まり。

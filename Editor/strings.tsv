@@ -27,8 +27,6 @@ check.rig.angle_over	狙える角度が180度を超えています: {0}	Aim limi
 check.rig.angle_link	狙える角度が170度を超えています。真後ろ近くでボーンが跳ぶことがあるので、連動する射出口は170度までにしてください: {0}	Aim limit over 170 degrees. Bones can jump near straight back, so keep linked emitters at 170 degrees or less: {0}
 check.emitter.no_pivot	Target Rotation Transform がありません	No Target Rotation Transform set
 check.emitter.unlisted	どの GunnerController の射出口の一覧にも入っていません	Not in any GunnerController's emitter list
-check.emitter.no_constraint	Target Rotation Transform が先端のボーン {0} の下になく、VRC Parent Constraint もないため、ボーンに追従しません	The Target Rotation Transform is not under the tip bone {0} and there is no VRC Parent Constraint, so it does not follow the bone
-check.emitter.constraint_no_source	VRC Parent Constraint の Source が空です	The VRC Parent Constraint has an empty source
 check.emitter.no_anim_fire	撃つ前のクリップ {0} に Animation Event(SendCustomEvent、_AnimFire)がないため、撃てません	Pre-fire clip {0} has no Animation Event (SendCustomEvent, _AnimFire), so it never shoots
 check.rig.animator_unsynced	Animator のレイヤーやパラメーターが、射出口のクリップと合っていません。「Animator にそろえる」を押してください	The Animator's layers or parameters do not match the emitters' clips. Press Sync Animator
 check.particle.not_world	パーティクル {0} が World simulation space ではありません	Particles {0} are not in World simulation space
@@ -65,8 +63,6 @@ GunnerEmitter.card.follow	ボーン連動の設定	Bone link settings
 GunnerEmitter.shotParticle	パーティクル	Particles
 GunnerEmitter.shotParticle.tip	撃つときに出すパーティクル。Simulation Space は World にする。弾が当たるレイヤーは、このパーティクルの Collision > Collides With で決める(Collision を切っていても、この値は使う)	Particles shot from the emitter. Set Simulation Space to World. Shots hit the layers in this particle system's Collision > Collides With (used even when Collision is off)
 GunnerEmitter.bones.add	+ 親のボーンを足す	+ Add parent bone
-GunnerEmitter.followed	追従先(VRC Parent Constraint)	Follows (VRC Parent Constraint)
-GunnerEmitter.followed.none	なし	None
 GunnerController.movers	動く物	Moving objects
 GunnerController.movers.tip	当たった跡がこの物に付いて動く	Hits on these follow them
 GunnerController.receivers	受け手	Receivers

@@ -6,6 +6,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-24
+
+This version changes the type of `GunnerEmitter.streamCollide`, how emitters sharing a tip bone link their bones, and how the pre-fire clip plays. See Breaking below.
+
+この版では、`GunnerEmitter.streamCollide` の型、同じ先端のボーンを持つ射出口の連動、撃つ前のクリップの流れ方が変わります。下の互換性のない変更を確かめてください。
+
+Breaking: `GunnerEmitter.streamCollide` is now a `bool`. A script that sets it as an int must use `true` or `false`.
+
+互換性のない変更です。`GunnerEmitter.streamCollide` が `bool` になりました。int で書いているスクリプトは、`true` か `false` に直してください。
+
+Breaking: emitters sharing a tip bone now each use their own `linkBones` and bone settings. Values that were hidden before now take effect, so the motion may change.
+
+互換性のない変更です。同じ先端のボーンを持つ射出口でも、`linkBones` とボーンの設定が射出口ごとに効くようになりました。これまで隠れていた値が効くので、動きが変わることがあります。
+
+Breaking: the pre-fire clip now plays to its end after the shot, and `_FireWith` is ignored until it ends. Press **Sync Animator** on the rig again to update existing Animator Controllers.
+
+互換性のない変更です。撃つ前のクリップは、撃った後も最後まで流れ、流れている間は `_FireWith` を受け付けません。既存の Animator Controller は、rig の「Animator にそろえる」を押し直してください。
+
 ### Added / 追加
 
 - Selecting a `GunnerEmitter` now shows an arrow in the Scene view pointing in the direction it fires (the +Z of its Target Rotation Transform). The arrow is shown in the editor only.

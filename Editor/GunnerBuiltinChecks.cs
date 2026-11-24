@@ -154,7 +154,7 @@ namespace Mecaota.Gunner.EditorTools
             var rig = GunnerEmitterEditor.RigOf(m, out _);
             if (rig == null)
             {
-                var parent = GunnerSetup.RigFor(m.gameObject);
+                var parent = m.GetComponentInParent<GunnerController>(true);
                 System.Action fix = null;
                 if (parent != null) fix = () => GunnerEditorUtil.Edit(parent, so => GunnerEditorUtil.Append(so.FindProperty("muzzles"), m));
                 into.Add(new GunnerCheck(E.Warning, "check.emitter.unlisted", m, fix));
@@ -214,7 +214,7 @@ namespace Mecaota.Gunner.EditorTools
                 var tip = GunnerEmitterEditor.Tip(m);
                 if (tip != null && m.pivot != null && !m.pivot.IsChildOf(tip))
                     into.Add(new GunnerCheck(E.Warning, "check.emitter.no_constraint", m,
-                        m.pivot != m.transform ? () => GunnerSetup.Follow(m, tip) : (System.Action)null, tip.name));
+                        null, tip.name));
                 return;
             }
             bool empty = c.Sources.Count == 0;
@@ -303,8 +303,22 @@ namespace Mecaota.Gunner.EditorTools
                 {
                     int layer = ball.gameObject.layer;
                     into.Add(new GunnerCheck(E.Warning, "check.hand.mask_hits_ball", hand,
-                        () => GunnerSetup.ExcludeLayer(rig, layer), LayerMask.LayerToName(layer)));
+                        () => ExcludeLayer(rig, layer), LayerMask.LayerToName(layer)));
                 }
+            }
+        }
+
+        // 全部の射出口のパーティクルの Collision > Collides With から layer を外す。
+        static void ExcludeLayer(GunnerController rig, int layer)
+        {
+            foreach (var muzzle in rig.muzzles ?? new GunnerEmitter[0])
+            {
+                var ps = muzzle != null ? muzzle.shotParticle : null;
+                if (ps == null) continue;
+                Undo.RecordObject(ps, "Gunner: hit layers");
+                var collision = ps.collision;
+                collision.collidesWith = collision.collidesWith.value & ~(1 << layer);
+                EditorUtility.SetDirty(ps);
             }
         }
 

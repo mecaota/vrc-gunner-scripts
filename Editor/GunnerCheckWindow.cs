@@ -14,6 +14,7 @@ namespace Mecaota.Gunner.EditorTools
         Vector2 scroll;
         List<GunnerCheck> rows;
 
+        [MenuItem("Tools/Gunner/Check Window", false, 0)]
         public static void Open()
         {
             var w = GetWindow<GunnerCheckWindow>();

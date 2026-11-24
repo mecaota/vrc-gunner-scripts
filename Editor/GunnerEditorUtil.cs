@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 
 namespace Mecaota.Gunner.EditorTools
 {
-    /// <summary>インスペクタ・点検・セットアップのメニューで共有する小さな補助。</summary>
+    /// <summary>インスペクタと点検で共有する小さな補助。</summary>
     public static class GunnerEditorUtil
     {
         /// <summary>
@@ -106,15 +106,10 @@ namespace Mecaota.Gunner.EditorTools
             CommitProxy(target);
         }
 
-        public static T AddUdon<T>(GameObject go) where T : UdonSharpBehaviour
-        {
-            return UdonSharpUndo.AddComponent<T>(go);
-        }
-
         public static T GetOrAddUdon<T>(GameObject go) where T : UdonSharpBehaviour
         {
             var found = go.GetComponent<T>();
-            return found != null ? found : AddUdon<T>(go);
+            return found != null ? found : UdonSharpUndo.AddComponent<T>(go);
         }
 
         public static GameObject CreateChild(Transform parent, string name)
@@ -127,18 +122,6 @@ namespace Mecaota.Gunner.EditorTools
                 go.layer = parent.gameObject.layer;
             }
             return go;
-        }
-
-        /// <summary>親の子でまだ使われていない名前: base, base_1, base_2 ...</summary>
-        public static string UniqueChildName(Transform parent, string baseName)
-        {
-            if (parent == null || parent.Find(baseName) == null) return baseName;
-            for (int i = 1; i < 1000; i++)
-            {
-                string name = baseName + "_" + i;
-                if (parent.Find(name) == null) return name;
-            }
-            return baseName;
         }
 
         // ---------------- シリアライズされた配列 ----------------
@@ -200,7 +183,7 @@ namespace Mecaota.Gunner.EditorTools
             shape.enabled = false;        // +Z へまっすぐ
 
             var collision = ps.collision;
-            collision.collidesWith = ~((1 << 2) | (1 << GunnerSetup.PickupLayer));   // rig の当たるレイヤー。Collision を入れなくても使う
+            collision.collidesWith = ~((1 << 2) | (1 << 13));   // rig の当たるレイヤー(Ignore Raycast と Pickup を除く)。Collision を入れなくても使う
 
             var trails = ps.trails;
             trails.enabled = true;

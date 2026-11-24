@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - A single shot requested while the post-fire clip was blending back to rest could miss its signal and not fire. The switch to rest is now instant, so end `postFireClip` in the rest pose. Press **Sync Animator** on the rig again.
 - 撃った後のクリップから休みへ移る間に撃つと、合図を逃して撃たないことがあったのを直しました。休みへは一瞬で切り替わるので、`postFireClip` は休みの姿勢で終えてください。rig の「Animator にそろえる」を押し直してください。
+- The pre-fire clip sometimes stayed on its last frame for one more clip length after shooting. It now moves on at its end without waiting for `GunnerPre<n>`; with no `_AnimFire` event it may play twice instead. Press **Sync Animator** on the rig again; the checks warn until you do.
+- 撃った後も、撃つ前のクリップが最後の姿勢のままクリップ1本分止まることがあったのを直しました。`GunnerPre<n>` が下りるのを待たずに、クリップの終わりで移ります。`_AnimFire` の Event が無いクリップは、止まる代わりに2回流れることがあります。rig の「Animator にそろえる」を押し直してください。押し直すまで、点検が警告を出します。
 
 ## [0.18.0] - 2026-11-25
 

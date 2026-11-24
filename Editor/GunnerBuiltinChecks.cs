@@ -104,7 +104,9 @@ namespace Mecaota.Gunner.EditorTools
                 {
                     var pre = t.destinationState;
                     if (pre == null || t.conditions.Length == 0 || !names.Contains(t.conditions[0].parameter)) continue;
-                    var after = pre.transitions.Length > 0 ? pre.transitions[0].destinationState : null;
+                    // 抜ける遷移に条件があるのは 0.18.0 までの形。
+                    if (pre.transitions.Length == 0 || pre.transitions[0].conditions.Length > 0) continue;
+                    var after = pre.transitions[0].destinationState;
                     have.Add((t.conditions[0].parameter, Real(pre.motion), after != null ? Real(after.motion) : null));
                 }
             }

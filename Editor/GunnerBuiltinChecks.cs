@@ -25,7 +25,6 @@ namespace Mecaota.Gunner.EditorTools
                 case GunnerEmitter muzzle: Emitter(muzzle, into); break;
                 case GunnerHandController hand: Hand(hand, into); break;
                 case GunnerPickupInput input: PickupInput(input, into); break;
-                case GunnerStream stream: Stream(stream, into); break;
             }
         }
 
@@ -46,9 +45,6 @@ namespace Mecaota.Gunner.EditorTools
             foreach (var source in muzzles.Where(m => m != null).Select(m => m.impactSource).Distinct())
                 if (source != null && source.transform.IsChildOf(rig.transform))
                     into.Add(new GunnerCheck(E.Warning, "check.rig.impact_in_rig", source, null, source.name));
-
-            if (StreamCount(rig, 0) > 0 && rig.stream == null)
-                into.Add(new GunnerCheck(E.Error, "check.rig.no_stream", rig, () => GunnerSetup.EnsureStream(rig)));
 
             if (rig.maxHits < 1)
                 into.Add(new GunnerCheck(E.Error, "check.rig.hits_zero", rig,
@@ -340,15 +336,6 @@ namespace Mecaota.Gunner.EditorTools
             if (input.GetComponent<VRCObjectSync>() == null)
                 into.Add(new GunnerCheck(E.Warning, "check.input.no_object_sync", input,
                     () => Undo.AddComponent<VRCObjectSync>(input.gameObject)));
-        }
-
-        // ---------------- 連射 ----------------
-
-        static void Stream(GunnerStream stream, List<GunnerCheck> into)
-        {
-            foreach (var rig in GunnerEditorUtil.FindInScenes<GunnerController>())
-                if (rig.stream == stream) return;
-            into.Add(new GunnerCheck(E.Warning, "check.stream.unused", stream));
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Mecaota.Gunner
         public int impactBurst = 1;
 
         public float streamRate = 12f;
-        public int streamHitMode = GunnerStream.HitOnce;
+        public int streamHitMode = GunnerController.HitOnce;
         public float streamHitInterval = 0.25f;
         public bool streamCollide = true;
 

@@ -24,8 +24,6 @@ namespace Mecaota.Gunner.EditorTools
             {
                 rig = AttachRig(go);
                 AddEmitter(rig, null, rig.transform.position, rig.transform.rotation);
-                // 連射にも備えておく: インスペクタで撃ち方を切り替えるだけで済む。
-                EnsureStream(rig);
             }
             Selection.activeObject = rig.gameObject;
         }
@@ -165,23 +163,6 @@ namespace Mecaota.Gunner.EditorTools
             constraint.ActivateConstraint();
             EditorUtility.SetDirty(constraint);
             return constraint;
-        }
-
-        public static GunnerStream EnsureStream(GunnerController rig)
-        {
-            if (rig.stream != null) return rig.stream;
-            var parts = Parts(rig);
-            var stream = GunnerEditorUtil.GetOrAddUdon<GunnerStream>(parts.gameObject);
-            GunnerEditorUtil.CommitProxy(stream);
-            GunnerEditorUtil.Edit(rig, so => so.FindProperty("stream").objectReferenceValue = stream);
-            return stream;
-        }
-
-        /// <summary>作った補助の部品は rig の "Parts" の子に置く。</summary>
-        public static Transform Parts(GunnerController rig)
-        {
-            var t = rig.transform.Find("Parts");
-            return t != null ? t : GunnerEditorUtil.CreateChild(rig.transform, "Parts").transform;
         }
 
         /// <summary>全部の射出口のパーティクルの Collision > Collides With から layer を外す。</summary>

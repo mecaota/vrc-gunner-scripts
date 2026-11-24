@@ -17,6 +17,10 @@ namespace Mecaota.Gunner
         public const int KindPlayer = 3;
         public const int FireSingle = 0;
         public const int FireStream = 1;
+        // HitOnce: 最初の接触で着弾を1つ記録し、その射出口の飛んでいる粒子を消す
+        // その射出口は、連射をやり直すか当たり判定をもう一度 on にするまで記録しない。トリガーを押している間は出し続ける。
+        public const int HitOnce = 0;
+        public const int HitKeep = 1;
         public const int AimNone = 0;
         public const int AimTarget = 2;      // 1 と 3 は空き番(旧 AimDirection、AimAngles)。同期する値なので番号は詰めない
         public const int MaxEmitters = 16;
@@ -73,12 +77,12 @@ namespace Mecaota.Gunner
         private const float SettleAngle = 0.01f;
         // boneMaxSpeeds を使う時、1フレームの計算に使う時間の上限(秒)。処理落ちで行き過ぎないように。
         private const float BoneStepMax = 0.1f;
+        private const int CatchUpMax = 3;        // 引っかかりの後、1フレームに出す連射の粒子の数の上限(まとめて出さない)
 
         // ---------------- セットアップ(エディタが書く) ----------------
 
         public GunnerEmitter[] muzzles;           // 並びが射出口の番号(同期する記録と GunnerPre<番号> が使う)
         public Transform[] movers;                // 動くオブジェクト: これ(または子)への着弾はそれに付いていく
-        public GunnerStream stream;               // 任意: 連射
         public GunnerHitReceiver[] receivers;    // 着弾を知らされる全員。実行中は _Register で増える
 
         public int maxHits = 16;                  // この端末が使う記録の数(1..SyncSlots)。Android では下げる。同期は16のまま
@@ -90,8 +94,8 @@ namespace Mecaota.Gunner
         // ---------------- 射出口ごとの値(_LoadMuzzles が muzzles から写す) ----------------
 
         // 毎フレーム読む値を、ほかの Behaviour の欄の読み出しにしないため、配列に写して使う。
-        [System.NonSerialized] public Transform[] emitters;         // GunnerStream・GunnerAutoAim も読む
-        [System.NonSerialized] public ParticleSystem[] shotParticles;
+        [System.NonSerialized] public Transform[] emitters;         // GunnerAutoAim も読む
+        private ParticleSystem[] shotParticles;
         private Transform[][] linkBones;
         private int[] fireModes;
         private float[] aimMaxAngles;
@@ -171,9 +175,6 @@ namespace Mecaota.Gunner
         [System.NonSerialized] public Vector3[] hitWorld;
         [System.NonSerialized] public bool[] hitLive;
 
-        // 射出口ごと: 飛んでいる単発の弾(GunnerStream が読む)。
-        [System.NonSerialized] public bool[] flightOn;
-
         // ---------------- 端末ごとの状態 ----------------
 
         private bool initialized;
@@ -202,6 +203,7 @@ namespace Mecaota.Gunner
         private float[] arriveAt;       // 0 未満 = 待ちなし
         private bool[] arrived;
         private bool[] slotReplay;
+        private bool[] flightOn;        // 射出口ごと: 飛んでいる単発の弾。その間は連射が粒子を使わない
         private float[] flightStart;
         private float[] flightLength;
         private int[] flightSlot;       // -1 = 外れ
@@ -210,6 +212,20 @@ namespace Mecaota.Gunner
         private Vector3 aimVector;
         private int aimEmitters;        // この端末の狙う射出口の組(_SetAimEmitters で決める)。0 = 全部
         private float[] aimHoldYaw;     // 射出口ごと: 暴れ止めで保つ左右の角度(狙える角度が FlipPitch を超える射出口だけ使う)
+        // 連射: 射出口ごとの粒子の経路の輪(cap 個ずつ)。持ち主はここから当たる所を見つける。
+        private int cap;
+        private bool[] streamActive;
+        private float[] nextEmitAt;
+        private float[] nextHitAt;
+        private float[] checkFrom;
+        private bool[] look;
+        private bool[] baseCollision;
+        private bool[] latched;
+        private int[] ringHead;
+        private Vector3[] rOrigin;
+        private Vector3[] rDir;
+        private float[] rTime;
+        private bool[] rAlive;
         private bool streamMine;
         private bool streamWas;
         private bool collideOn = true;
@@ -330,10 +346,41 @@ namespace Mecaota.Gunner
             for (int i = 0; i < emitterCount; i++) if (emitters[i] != null) restLocal[i] = emitters[i].localRotation;
             InitAimFrames();
             RecountLate();
-            if (stream != null) stream._Init(this);
+            InitStream();
         }
 
-        /// <summary>muzzles の値を射出口ごとの配列へ写す。エディタは Play 中の変更を効かせるために呼ぶ(射出口の数、撃ち方、連動、連射が読む値は起動時のまま)。</summary>
+        private void InitStream()
+        {
+            int n = emitterCount;
+            cap = 4;
+            for (int e = 0; e < n; e++)
+            {
+                if (emitters[e] == null) continue;
+                cap = Mathf.Max(cap, Mathf.CeilToInt(maxRanges[e] / _Speed(e) * streamRates[e]) + 2);
+            }
+            cap = Mathf.Min(cap, 128);
+            streamActive = new bool[n];
+            nextEmitAt = new float[n];
+            nextHitAt = new float[n];
+            checkFrom = new float[n];
+            look = new bool[n];
+            baseCollision = new bool[n];
+            latched = new bool[n];
+            ringHead = new int[n];
+            rOrigin = new Vector3[n * cap];
+            rDir = new Vector3[n * cap];
+            rTime = new float[n * cap];
+            rAlive = new bool[n * cap];
+            for (int e = 0; e < n; e++)
+            {
+                ParticleSystem ps = Particles(shotParticles, e);
+                if (ps == null) continue;
+                ParticleSystem.CollisionModule collision = ps.collision;
+                baseCollision[e] = collision.enabled;
+            }
+        }
+
+        /// <summary>muzzles の値を射出口ごとの配列へ写す。エディタは Play 中の変更を効かせるために呼ぶ(射出口の数、撃ち方、連動、連射の粒子の数は起動時のまま)。</summary>
         public void _LoadMuzzles()
         {
             int n = emitterCount;
@@ -390,11 +437,11 @@ namespace Mecaota.Gunner
                 impactParticles[i] = m.impactParticle;
                 impactBursts[i] = m.impactBurst;
                 shotSpeeds[i] = m.shotSpeed;
-                maxRanges[i] = m.maxRange;
+                maxRanges[i] = Mathf.Max(m.maxRange, 0.01f);
                 castRadii[i] = m.castRadius;
-                streamRates[i] = m.streamRate;
+                streamRates[i] = Mathf.Max(m.streamRate, 0.1f);
                 streamHitModes[i] = m.streamHitMode;
-                streamHitIntervals[i] = m.streamHitInterval;
+                streamHitIntervals[i] = Mathf.Max(m.streamHitInterval, 0.02f);
                 streamCollides[i] = m.streamCollide ? 1 : 0;
             }
         }
@@ -823,14 +870,14 @@ namespace Mecaota.Gunner
             if (any) _Commit();
         }
 
-        /// <summary>連射を始める(payload は 0)。stream が空なら何もしない。</summary>
+        /// <summary>連射を始める(payload は 0)。</summary>
         public void StartStream() { _StartStreamWith(0); }
 
         /// <summary>payload 付きで連射を始める(rig を取る)。狙う組に連射の射出口が無ければ何もしない。もう連射中なら payload と狙いだけを送り直す。</summary>
         public void _StartStreamWith(int payload)
         {
             Init();
-            if (stream == null || StreamSet(aimEmitters) == 0 || !TakeOwnership()) return;
+            if (StreamSet(aimEmitters) == 0 || !TakeOwnership()) return;
             streamMine = true;
             streamPayload = payload;
             aimSyncMode = (byte)aimMode;
@@ -840,7 +887,7 @@ namespace Mecaota.Gunner
             {
                 streamOn = true;
                 streamWas = true;
-                stream._Begin(Time.time);
+                StreamBegin(Time.time);
                 NotifyFire(-1, true, false, streamPayload);
             }
             aimPending = false;
@@ -931,7 +978,7 @@ namespace Mecaota.Gunner
         public void _SetCollision(bool on)
         {
             Init();
-            if (on && !collideOn && stream != null) stream._ResetCollision(Time.time);
+            if (on && !collideOn) StreamResetCollision(Time.time);
             collideOn = on;
         }
 
@@ -939,7 +986,13 @@ namespace Mecaota.Gunner
         public bool _IsStreaming() { return streamOn; }
 
         /// <summary>連射の粒子がまだ射程の中を飛んでいれば true。</summary>
-        public bool _IsStreamInFlight() { return initialized && stream != null && stream._InFlight(Time.time); }
+        public bool _IsStreamInFlight()
+        {
+            if (!initialized) return false;
+            float now = Time.time;
+            for (int k = 0; k < rAlive.Length; k++) if (rAlive[k] && (now - rTime[k]) * _Speed(k / cap) <= maxRanges[k / cap]) return true;
+            return false;
+        }
 
         /// <summary>ボーンの連動が今 on なら true。</summary>
         public bool _IsBoneFollowing() { return BoneOn(); }
@@ -1046,9 +1099,6 @@ namespace Mecaota.Gunner
             return true;
         }
 
-        // GunnerStream、持ち主: 最後の判定を、そのフレームでここまでで一番よい接触として残す。
-        public void _KeepCast() { KeepCast(); }
-
         private void KeepCast()
         {
             keepKind = castKind;
@@ -1059,8 +1109,8 @@ namespace Mecaota.Gunner
             keepPlayer = castPlayer;
         }
 
-        // GunnerStream、持ち主: 残した接触を記録し、すぐに見せる。次の間引いた送信で送る。
-        public void _StreamHit(int emitter)
+        // 連射、持ち主: 残した接触を記録し、すぐに見せる。次の間引いた送信で送る。
+        private void StreamHit(int emitter)
         {
             if (!ValidEmitter(emitter) || !Networking.IsOwner(gameObject)) return;
             // まだ誰も受け取っていない記録を輪が上書きしてしまう時は、その接触を記録しない(送信は次の機会に出る。
@@ -1271,11 +1321,6 @@ namespace Mecaota.Gunner
         // ================= 当たり判定 =================
 
         // origin + dir * (0..range) に沿って一番近い接触: この rig に属さないワールドのコライダー、次にプレイヤー。判定の結果を埋める。
-        public bool _CastPath(int e, Vector3 origin, Vector3 dir, float range) { return Cast(e, origin, dir, range); }
-
-        // _CastPath の経路に沿った距離(true を返した直後だけ有効)。
-        public float _CastDistance() { return castDistance; }
-
         private bool Cast(int e, Vector3 origin, Vector3 dir, float range)
         {
             castKind = KindNone;
@@ -1460,8 +1505,14 @@ namespace Mecaota.Gunner
         {
             ParticleSystem ps = Particles(shotParticles, e);
             if (ps == null || !ValidEmitter(e)) return;
-            if (stream != null) stream._Restore(e);
-            else ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            StreamForget(e);
+            if (!look[e]) return;
+            look[e] = false;
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.enabled = true;
+            ParticleSystem.CollisionModule collision = ps.collision;
+            collision.enabled = baseCollision[e];
         }
 
         // 呼ぶ前に PrepareFly を済ませておく。
@@ -1492,8 +1543,11 @@ namespace Mecaota.Gunner
 
         private void StopAllFlights()
         {
-            for (int i = 0; i < emitterCount; i++) StopFlight(i);
-            if (stream != null) stream._ClearAll();
+            for (int i = 0; i < emitterCount; i++)
+            {
+                StopFlight(i);
+                StreamClear(i);
+            }
         }
 
         // ================= 同期 =================
@@ -1542,7 +1596,7 @@ namespace Mecaota.Gunner
                     arriveAt[s] = now;
                     // 持ち主の連射がここに当たった: この射出口の連射の粒子もここで終わる(HitOnce の時)。
                     int em = MetaEmitter(kMeta[s]);
-                    if (!first && stream != null && _StreamHitMode(em) == GunnerStream.HitOnce && ValidEmitter(em)) stream._Clear(em);
+                    if (!first && ValidEmitter(em) && streamHitModes[em] == HitOnce) StreamClear(em);
                 }
                 else Launch(s);
             }
@@ -1580,9 +1634,9 @@ namespace Mecaota.Gunner
         // first = 入室後の最初の受信。その時に続いていた連射は、今始まったのではないので再生の印を付ける。
         private void ApplyStreamState(bool first)
         {
-            if (streamOn && !streamWas && stream != null)
+            if (streamOn && !streamWas)
             {
-                stream._Begin(Time.time);
+                StreamBegin(Time.time);
                 NotifyFire(-1, true, first, streamPayload);
             }
             streamWas = streamOn;
@@ -1690,7 +1744,7 @@ namespace Mecaota.Gunner
             ApplyAimAll(mode, vec, emit);
 
             // 2. 連射、次に間引いた送信(連射の記録と狙いで共有する)。連射は持ち主の狙う組の連射の射出口だけから出る。
-            if (stream != null) stream._StepMasked(now, streamOn, owner, owner && collideOn ? collideMask : 0, StreamSet(owner ? aimEmitters : aimEmitSync));
+            StreamStep(now, owner, owner && collideOn ? collideMask : 0, StreamSet(owner ? aimEmitters : aimEmitSync));
             if (owner && AimSynced() && AimChanged())
             {
                 aimSyncMode = (byte)aimMode;
@@ -2060,6 +2114,163 @@ namespace Mecaota.Gunner
 
         private bool BoneOn() { return boneMode == 0 ? boneFollow : boneMode == 2; }
 
+        // ================= 連射 =================
+
+        // 連射を今(また)始める: 今から出す。どの射出口もまた当たってよい
+        // (当たり判定を切り替えない rig は、最初の HitOnce の接触の後ずっと止まったままになってしまうため)。
+        private void StreamBegin(float now)
+        {
+            for (int e = 0; e < emitterCount; e++) nextEmitAt[e] = now;
+            StreamResetCollision(now);
+        }
+
+        // 当たり判定 off → on: 各射出口がまた当たってよい。粒子の今の位置から数える。
+        private void StreamResetCollision(float now)
+        {
+            for (int e = 0; e < emitterCount; e++)
+            {
+                latched[e] = false;
+                checkFrom[e] = now;
+                nextHitAt[e] = now;
+            }
+        }
+
+        // 射出口 e の連射の粒子を消す(HitOnce の接触、StopFire、ClearHits)。
+        private void StreamClear(int e)
+        {
+            if (!StreamAny(e)) return;
+            ParticleSystem ps = Particles(shotParticles, e);
+            if (ps != null && !flightOn[e]) ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            StreamForget(e);
+        }
+
+        // 全員、狙いの後: 出す、経路を古くする。持ち主で当たり判定が on なら、経路が最初に当たった所を記録する。
+        // mask = 粒子を出す射出口の組(ビット e = 射出口 e)。組の外の射出口は新しく出さないが、
+        // もう飛んでいる粒子は今までどおり進み、当たる。collide = 当たりを記録する射出口の組(0 = どれも記録しない)。
+        private void StreamStep(float now, bool owner, int collide, int mask)
+        {
+            for (int e = 0; e < emitterCount; e++)
+            {
+                if (emitters[e] == null) continue;
+                bool emitHere = streamOn && (mask & (1 << e)) != 0;
+                if (emitHere && flightOn[e]) nextEmitAt[e] = now; // 単発が粒子を使っている。追いつかずに再開する
+                else if (emitHere)
+                {
+                    float interval = 1f / streamRates[e];
+                    int k = 0;
+                    while (now >= nextEmitAt[e] && k < CatchUpMax) { StreamEmit(e, now); nextEmitAt[e] += interval; k++; }
+                    if (now >= nextEmitAt[e]) nextEmitAt[e] = now + interval;
+                }
+                else if (streamOn) nextEmitAt[e] = now; // 組の外: 組に戻った時に追いつきで続けて出さない
+                StreamAge(e, now);
+                if (owner && (collide & (1 << e)) != 0 && streamActive[e]) StreamCollide(e, now);
+                checkFrom[e] = now;
+            }
+        }
+
+        // 射程を越えた経路を捨てる。
+        private void StreamAge(int e, float now)
+        {
+            int at = e * cap;
+            float speed = _Speed(e);
+            bool any = false;
+            for (int r = 0; r < cap; r++)
+            {
+                int q = at + r;
+                if (!rAlive[q]) continue;
+                if ((now - rTime[q]) * speed > maxRanges[e]) { rAlive[q] = false; continue; }
+                any = true;
+            }
+            streamActive[e] = any;
+        }
+
+        // 持ち主: 生きている経路ごとに、前に確かめた後に飛んだ区間を判定する。時間で一番早い接触を採る。
+        private void StreamCollide(int e, float now)
+        {
+            int mode = streamHitModes[e];
+            if (mode == HitOnce && latched[e]) return;
+            if (mode == HitKeep && now < nextHitAt[e]) return;
+            float speed = _Speed(e);
+            int at = e * cap;
+            int bestQ = -1;
+            float bestWhen = 1e30f;
+            for (int r = 0; r < cap; r++)
+            {
+                int q = at + r;
+                if (!rAlive[q]) continue;
+                float a = (Mathf.Max(checkFrom[e], rTime[q]) - rTime[q]) * speed;
+                float b = Mathf.Min((now - rTime[q]) * speed, maxRanges[e]);
+                if (b - a <= 0.0001f) continue;
+                if (!Cast(e, rOrigin[q] + rDir[q] * a, rDir[q], b - a)) continue;
+                float when = rTime[q] + (a + castDistance) / speed;
+                if (when >= bestWhen) continue;
+                bestWhen = when;
+                bestQ = q;
+                // 判定の結果は次の判定で上書きされる: 一番よいものを今残す。
+                KeepCast();
+            }
+            if (bestQ < 0) return;
+            StreamHit(e);
+            if (mode == HitOnce)
+            {
+                latched[e] = true;
+                StreamClear(e);
+            }
+            else
+            {
+                rAlive[bestQ] = false;
+                nextHitAt[e] = now + streamHitIntervals[e];
+            }
+        }
+
+        // 射出口の今の姿勢(このフレームで狙わせた)から粒子を1つ。
+        private void StreamEmit(int e, float now)
+        {
+            ParticleSystem ps = Particles(shotParticles, e);
+            if (ps == null) return;
+            if (!look[e]) UseStreamLook(e, ps);
+            Transform m = emitters[e];
+            Vector3 origin = m.position;
+            Vector3 dir = m.forward;
+            ps.transform.SetPositionAndRotation(origin, m.rotation);
+            ParticleSystem.MainModule main = ps.main;
+            main.startSpeedMultiplier = _Speed(e);
+            main.startLifetimeMultiplier = maxRanges[e] / _Speed(e);
+            if (!ps.isPlaying) ps.Play(true);
+            ps.Emit(1);
+            int k = e * cap + ringHead[e];
+            ringHead[e] = (ringHead[e] + 1) % cap;
+            rOrigin[k] = origin; rDir[k] = dir; rTime[k] = now; rAlive[k] = true;
+        }
+
+        private void UseStreamLook(int e, ParticleSystem ps)
+        {
+            look[e] = true;
+            // 粒子は Emit からだけ出す。Play で作ったときのバーストを出してはいけない。
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.enabled = false;
+            // HitOnce: 接触は持ち主の判定で決める。作ったときの当たり判定だと、撃つ人の体で粒子が消えてしまう。
+            // HitKeep: 作ったときの当たり判定を残し、連射(水)が壁で自然に終わるようにする。
+            ParticleSystem.CollisionModule collision = ps.collision;
+            collision.enabled = streamHitModes[e] == HitKeep && baseCollision[e];
+            ParticleSystem.MainModule main = ps.main;
+            if (main.maxParticles < cap + 1) main.maxParticles = cap + 1;
+        }
+
+        private void StreamForget(int e)
+        {
+            int at = e * cap;
+            for (int i = 0; i < cap; i++) rAlive[at + i] = false;
+            streamActive[e] = false;
+        }
+
+        private bool StreamAny(int e)
+        {
+            int at = e * cap;
+            for (int i = 0; i < cap; i++) if (rAlive[at + i]) return true;
+            return false;
+        }
+
         // ================= 小さな補助 =================
 
         private bool ValidEmitter(int e) { return e >= 0 && e < emitterCount && emitters[e] != null; }
@@ -2081,16 +2292,9 @@ namespace Mecaota.Gunner
             return ps != null ? ps.collision.collidesWith.value & ~PlayerLayers : 0;
         }
 
-        // 射出口 e の値(GunnerStream も読む)。
         public float _Speed(int e) { return Mathf.Max(Value(shotSpeeds, e, 25f), 0.01f); }
 
         public float _Range(int e) { return Value(maxRanges, e, 30f); }
-
-        public float _StreamRate(int e) { return Value(streamRates, e, 12f); }
-
-        public int _StreamHitMode(int e) { return Number(streamHitModes, e, GunnerStream.HitOnce); }
-
-        public float _StreamHitInterval(int e) { return Value(streamHitIntervals, e, 0.25f); }
 
         /// <summary>使う射出口の数(emitters の長さ。最大 MaxEmitters)。</summary>
         public int _EmitterCount() { return emitterCount; }

@@ -50,7 +50,7 @@ namespace Mecaota.Gunner.EditorTools
 
             if (Foldout("GunnerController.section.shot"))
             {
-                Fields("stream", "fireAnimator");
+                Field("fireAnimator");
                 if (GUILayout.Button(T("GunnerController.syncAnimator")))
                     foreach (GunnerController r in targets) GunnerAnimatorSync.Sync(r);
             }

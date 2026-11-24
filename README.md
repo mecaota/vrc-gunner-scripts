@@ -189,7 +189,7 @@ Spider                (has the Animator)
 └─ GunnerRig
    └─ muzzles
       └─ mouth      GunnerEmitter + VRC Parent Constraint (source: the bone)
-         └─ Target Rotation Transform  the pivot: the aim turns this
+         └─ Pivot   the pivot: the aim turns this
 ```
 
 ## Changes in 0.13.0

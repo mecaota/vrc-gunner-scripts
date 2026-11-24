@@ -95,7 +95,8 @@ namespace Mecaota.Gunner.EditorTools
                 {
                     after = machine.AddState(byPost.Key.name);
                     after.motion = byPost.Key;
-                    Timing(after.AddTransition(rest), true, 0.1f);
+                    // 0 秒: この遷移の間は Any State から入れず、次の撃つ前が遅れて合図を逃す。
+                    Timing(after.AddTransition(rest), true, 0f);
                 }
                 // Any State から入る: 後のクリップの途中でもすぐ撃つ前へ移る(rig はクリップの長さだけ待つので、入るのが遅れると合図を逃す)。
                 foreach (int i in byPost)
@@ -104,9 +105,8 @@ namespace Mecaota.Gunner.EditorTools
                     enter.canTransitionToSelf = false;
                     enter.AddCondition(AnimatorConditionMode.If, 0f, ParamPrefix + i);
                 }
-                // 終わっても GunnerPre が真のまま後へ移ると、Any State からもう一度入るので、下りるまで待つ。
-                var leave = Timing(preState.AddTransition(after), true, 0.05f);
-                foreach (int i in byPost) leave.AddCondition(AnimatorConditionMode.IfNot, 0f, ParamPrefix + i);
+                // 条件を付けない: exitTime は 1.0 を越えたフレームでしか見ないので、合図が同じフレームだと次の 2.0 まで抜けない。
+                Timing(preState.AddTransition(after), true, 0.05f);
             }
         }
 

@@ -86,14 +86,14 @@ Gun
 └ GunnerRig
    ├ muzzles
    │  └ Emitter
-   │     └ Target Transform
+   │     └ Target Rotation Transform
    │        └ Shot
    └ Parts
 ```
 
 - `GunnerRig`: 全体をまとめる部品です。
 - `Emitter`: 弾の出る「場所」です。4 章で銃口へ動かします。
-- `Target Transform`: 弾の「向き」です。+Z が撃つ向きです。GunnerEmitter の「Target Transform」欄に入っています。
+- `Target Rotation Transform`: 弾の「向き」です。+Z が撃つ向きです。GunnerEmitter の「Target Rotation Transform」欄に入っています。
 - `Shot`: 弾のパーティクルです。
 - `Parts`: 連射の部品(GunnerStream)です。
 
@@ -101,7 +101,7 @@ Gun
 
 UdonBehaviour の Sync Method が Continuous と表示されても、そのままでかまいません。`Gun` の VRC Object Sync に合った値です。
 
-![ヒエラルキー。Gun の下に GunnerRig、muzzles、Emitter、Target Transform、Shot、Parts ができている](../img/ch3-02-hierarchy-rig.png)
+![ヒエラルキー。Gun の下に GunnerRig、muzzles、Emitter、Target Rotation Transform、Shot、Parts ができている](../img/ch3-02-hierarchy-rig.png)
 
 ![GunnerRig のインスペクター。「射出口」に Emitter、「連射の部品」に Parts が入っている](../img/ja/ch3-03a-inspector-gunnerrig.png)
 
@@ -113,7 +113,7 @@ UdonBehaviour の Sync Method が Continuous と表示されても、そのま�
 
 ## 4. 射出口を銃口に合わせる
 
-射出口は、できた直後は `Gun` の原点にあります。これを銃口の先へ動かします。動かすのは `Emitter`(場所)です。`Target Transform` は動かしません。
+射出口は、できた直後は `Gun` の原点にあります。これを銃口の先へ動かします。動かすのは `Emitter`(場所)です。`Target Rotation Transform` は動かしません。
 
 1. `Emitter` を選ぶ。
 2. 「位置(Position)」を (0, 0, 0.255) にする。
@@ -162,7 +162,7 @@ GunnerPickupInput の「Pickup」と、GunnerHandController の「移動ロッ�
 
 弾の見た目は、`Shot` の Particle System で変えます。
 
-1. `Emitter/Target Transform/Shot` を選ぶ。
+1. `Emitter/Target Rotation Transform/Shot` を選ぶ。
 2. Particle System の「開始時の色(Start Color)」を変える。
 3. 「開始サイズ(Start Size)」を変える。
 4. 「トレイル(Trails)」の「生存期間(Lifetime)」を変える。
@@ -201,7 +201,7 @@ GunnerPickupInput の「Pickup」と、GunnerHandController の「移動ロッ�
 
 連射の弾を 1 本の線につなげるかどうかは、GunnerEmitter ではなく、その射出口の `Shot` の Particle System で決めます。
 
-1. 撃ち方を変えた射出口の下の `Target Transform/Shot` を選ぶ(射出口が `Emitter_1` なら `Emitter_1/Target Transform/Shot`)。
+1. 撃ち方を変えた射出口の下の `Target Rotation Transform/Shot` を選ぶ(射出口が `Emitter_1` なら `Emitter_1/Target Rotation Transform/Shot`)。
 2. 「トレイル(Trails)」にチェックを入れて、「モード(Mode)」を「リボン(Ribbon)」にする。
 3. 「レンダラー(Renderer)」の「レンダーモード(Render Mode)」を「なし(None)」にする。粒は見えなくなり、線だけが残ります。
 
@@ -235,7 +235,7 @@ GunnerPickupInput の「Pickup」と、GunnerHandController の「移動ロッ�
 2. メニューの `GameObject > Gunner > Add Emitter` を選ぶ。
 3. `muzzles` の下に `Emitter_1` ができたことを確かめる。
 4. `Emitter_1` の「位置(Position)」を (0, 0, 0.255) にする。新しい射出口は rig の原点にできるので、4 章と同じように銃口へ動かします。
-5. `Emitter_1/Target Transform/Shot` の色や大きさを変える(7 章)。
+5. `Emitter_1/Target Rotation Transform/Shot` の色や大きさを変える(7 章)。
 6. `Emitter_1` の「撃ち方(Fire mode)」を変える(8 章)。
 
 どの射出口で撃つかは、GunnerHandController の「射出口の番号(Emitter index)」で選びます。

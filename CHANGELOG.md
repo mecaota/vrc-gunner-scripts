@@ -8,8 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added / 追加
 
-- Selecting a `GunnerEmitter` now shows an arrow in the Scene view pointing in the direction it fires (the +Z of its Target Transform). The arrow is shown in the editor only.
-- `GunnerEmitter` を選ぶと、シーンビューに射出方向(Target Transform の +Z)の矢印が出ます。エディターだけの表示です。
+- Selecting a `GunnerEmitter` now shows an arrow in the Scene view pointing in the direction it fires (the +Z of its Target Rotation Transform). The arrow is shown in the editor only.
+- `GunnerEmitter` を選ぶと、シーンビューに射出方向(Target Rotation Transform の +Z)の矢印が出ます。エディターだけの表示です。
 
 ### Changed / 変更
 
@@ -21,16 +21,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `GunnerRig` のインスペクターの射出口の一覧を、ドラッグで並べ替えられるリストにしました(「+」で空の欄を足し、「-」で選んだ行を外します)。「+」は射出口の GameObject を作らなくなり、射出口が0件の点検の「直す」ボタンも無くなりました。並べ替えると射出口の番号が変わるので、「Animator にそろえる」を押し直し、`GunnerHandController` の `useEmitters` と `GunnerAutoAim` の `emitterSwitches`・`firePayloads` も直してください。既存のシーンと値は変わりません。
 - Checks that have no fix no longer show a disabled Fix button.
 - 直し方のない点検には、押せない「直す」ボタンを出さなくなりました。
-- The `GunnerEmitter` field `pivot` is now labelled "Target Transform" in the inspector and in the checks (the field itself is unchanged).
-- `GunnerEmitter` の `pivot` の表示名と点検の文言を「Target Transform」にしました(欄そのものは変わりません)。
+- The `GunnerEmitter` field `pivot` is now labelled "Target Rotation Transform" in the inspector and in the checks (the field itself is unchanged).
+- `GunnerEmitter` の `pivot` の表示名と点検の文言を「Target Rotation Transform」にしました(欄そのものは変わりません)。
 - `GunnerAutoAim` now keeps the aim and the linked bones until the pre-fire clip ends, not only until the shot. A clip longer than `fireInterval` delays the next shot until it ends, so the actual interval is the clip length plus about 0.1 s. Press **Sync Animator** again; the rig's checks warn until you do.
 - `GunnerAutoAim` は、狙いと連動するボーンを、撃った時ではなく撃つ前のクリップが終わるまで保つようになりました。クリップが `fireInterval` より長いと、次の弾はクリップが終わるまで待つので、実際の間隔は「クリップの長さ + 約0.1秒」になります。「Animator にそろえる」を押し直してください。押し直すまで、点検が警告を出します。
 - While a pre-fire clip plays, `_FireWith` on that rig is ignored until the clip ends (before, only until the Animation Event). This applies to every caller, including `GunnerHandController`, not only `GunnerAutoAim`. A clip whose `_AnimFire` does not arrive now gives up when the clip ends instead of after 3 seconds.
 - 撃つ前のクリップが流れている間は、その rig への `_FireWith` は、クリップが終わるまで受け付けません(これまでは Animation Event まで)。`GunnerAutoAim` だけでなく、`GunnerHandController` など、呼ぶ側すべてに効きます。`_AnimFire` が来ない時は、3秒後ではなく、クリップが終わった時にやめます。
 - Each emitter now plays its own `postFireClip`, also when it shares its `preFireClip` with other emitters (before, the lowest-numbered emitter's clip was used). The pre-fire state is entered from Any State, so a new shot cuts the previous post-fire clip short. Press **Sync Animator** on the rig again; the rig's checks warn until you do.
 - 同じ `preFireClip` を持つ射出口でも、`postFireClip` は射出口ごとに流れるようになりました(これまでは番号の最も若い射出口のもの)。撃つ前の状態へは Any State から入るので、新しく撃つと、前の撃った後のクリップは途中で切れます。rig の「Animator にそろえる」を押し直してください。押し直すまで、点検が警告を出します。
-- The child GameObject that `GunnerSetup` creates under each new emitter, and the one in the sample `Prefab/GunnerRig.prefab`, is now named `Target Transform` (was `Pivot`), matching the `GunnerEmitter` field label. Existing scenes keep their old names; only emitters made from now on are named differently.
-- `GunnerSetup` が射出口の下に作る子 GameObject と、サンプルの `Prefab/GunnerRig.prefab` の中の子 GameObject の名前を、`GunnerEmitter` の欄の表示名にそろえて `Target Transform`(以前は `Pivot`)にしました。既存のシーンの名前は変わりません。新しく作る射出口の名前だけが変わります。
+- The child GameObject that `GunnerSetup` creates under each new emitter, and the one in the sample `Prefab/GunnerRig.prefab`, is now named `Target Rotation Transform` (was `Pivot`), matching the `GunnerEmitter` field label. Existing scenes keep their old names; only emitters made from now on are named differently.
+- `GunnerSetup` が射出口の下に作る子 GameObject と、サンプルの `Prefab/GunnerRig.prefab` の中の子 GameObject の名前を、`GunnerEmitter` の欄の表示名にそろえて `Target Rotation Transform`(以前は `Pivot`)にしました。既存のシーンの名前は変わりません。新しく作る射出口の名前だけが変わります。
 - The "Edit in scene" toggle on `GunnerRig` is removed. Select an emitter to see and edit its handles in the Scene view; the rig no longer draws the handles of all its emitters.
 - `GunnerRig` の「シーンで編集」のトグルを消しました。射出口を選ぶと、シーンビューに編集用のハンドルが出ます。rig を選んでも、全射出口のハンドルは出なくなりました。
 

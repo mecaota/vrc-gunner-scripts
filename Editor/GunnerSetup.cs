@@ -19,7 +19,7 @@ namespace Mecaota.Gunner.EditorTools
         static void MenuAddRig(MenuCommand command)
         {
             var go = Target(command);
-            var rig = go != null ? go.GetComponentInParent<GunnerRig>(true) : null;
+            var rig = go != null ? go.GetComponentInParent<GunnerController>(true) : null;
             if (rig == null)
             {
                 rig = AttachRig(go);
@@ -88,13 +88,13 @@ namespace Mecaota.Gunner.EditorTools
         }
 
         /// <summary>go の上の rig。無ければ、go の上の最も近い Animator の下で最初の rig(モデルの中で、ボーンの横に rig を置いた形)。</summary>
-        public static GunnerRig RigFor(GameObject go)
+        public static GunnerController RigFor(GameObject go)
         {
             if (go == null) return null;
-            var rig = go.GetComponentInParent<GunnerRig>(true);
+            var rig = go.GetComponentInParent<GunnerController>(true);
             if (rig != null) return rig;
             var animator = go.GetComponentInParent<Animator>(true);
-            return animator != null ? animator.GetComponentInChildren<GunnerRig>(true) : null;
+            return animator != null ? animator.GetComponentInChildren<GunnerController>(true) : null;
         }
 
         static Animator HumanoidFor(GameObject go)
@@ -108,23 +108,23 @@ namespace Mecaota.Gunner.EditorTools
         // ---------------- 操作 ----------------
 
         /// <summary>
-        /// オブジェクトに GunnerRig を足す(何も渡さなければ新しく作る)。rig は Manual 同期で、VRC Object Sync と同じ
+        /// オブジェクトに GunnerController を足す(何も渡さなければ新しく作る)。rig は Manual 同期で、VRC Object Sync と同じ
         /// GameObject には置けないので、そういうオブジェクトには rig 用の子を作る。
         /// </summary>
-        public static GunnerRig AttachRig(GameObject go)
+        public static GunnerController AttachRig(GameObject go)
         {
             if (go == null)
             {
-                go = new GameObject("GunnerRig");
+                go = new GameObject("GunnerController");
                 Undo.RegisterCreatedObjectUndo(go, "Gunner: rig");
                 var view = SceneView.lastActiveSceneView;
                 if (view != null) go.transform.position = view.pivot;
             }
             else if (go.GetComponent<VRCObjectSync>() != null)
             {
-                go = GunnerEditorUtil.CreateChild(go.transform, GunnerEditorUtil.UniqueChildName(go.transform, "GunnerRig"));
+                go = GunnerEditorUtil.CreateChild(go.transform, GunnerEditorUtil.UniqueChildName(go.transform, "GunnerController"));
             }
-            var rig = GunnerEditorUtil.GetOrAddUdon<GunnerRig>(go);
+            var rig = GunnerEditorUtil.GetOrAddUdon<GunnerController>(go);
             GunnerEditorUtil.CommitProxy(rig);
             return rig;
         }
@@ -133,7 +133,7 @@ namespace Mecaota.Gunner.EditorTools
         /// rig の muzzles の下に射出口(+Z = 休み方向)を作り、rig の一覧に足す。GunnerEmitter は射出口に、弾の粒子は狙いで回す子 Target Rotation Transform に付ける。
         /// bone があれば、射出口に VRC Parent Constraint を付けて、今の姿勢のままそのボーンに付いて行かせる。
         /// </summary>
-        public static GunnerEmitter AddEmitter(GunnerRig rig, Transform bone, Vector3 position, Quaternion rotation, string name = "Emitter")
+        public static GunnerEmitter AddEmitter(GunnerController rig, Transform bone, Vector3 position, Quaternion rotation, string name = "Emitter")
         {
             var muzzles = Muzzles(rig);
             var go = GunnerEditorUtil.CreateChild(muzzles, GunnerEditorUtil.UniqueChildName(muzzles, name));
@@ -151,7 +151,7 @@ namespace Mecaota.Gunner.EditorTools
             return muzzle;
         }
 
-        public static Transform Muzzles(GunnerRig rig)
+        public static Transform Muzzles(GunnerController rig)
         {
             var t = rig.transform.Find("muzzles");
             return t != null ? t : GunnerEditorUtil.CreateChild(rig.transform, "muzzles").transform;
@@ -167,7 +167,7 @@ namespace Mecaota.Gunner.EditorTools
             return constraint;
         }
 
-        public static GunnerStream EnsureStream(GunnerRig rig)
+        public static GunnerStream EnsureStream(GunnerController rig)
         {
             if (rig.stream != null) return rig.stream;
             var parts = Parts(rig);
@@ -178,14 +178,14 @@ namespace Mecaota.Gunner.EditorTools
         }
 
         /// <summary>作った補助の部品は rig の "Parts" の子に置く。</summary>
-        public static Transform Parts(GunnerRig rig)
+        public static Transform Parts(GunnerController rig)
         {
             var t = rig.transform.Find("Parts");
             return t != null ? t : GunnerEditorUtil.CreateChild(rig.transform, "Parts").transform;
         }
 
         /// <summary>全部の射出口のパーティクルの Collision > Collides With から layer を外す。</summary>
-        public static void ExcludeLayer(GunnerRig rig, int layer)
+        public static void ExcludeLayer(GunnerController rig, int layer)
         {
             foreach (var muzzle in rig.muzzles ?? new GunnerEmitter[0])
             {

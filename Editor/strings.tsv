@@ -27,14 +27,14 @@ check.rig.impact_in_rig	着弾音の音源 {0} が rig の配下にあります�
 check.rig.angle_over	狙える角度が180度を超えています: {0}	Aim limit is over 180 degrees: {0}
 check.rig.angle_link	狙える角度が170度を超えています。真後ろ近くでボーンが跳ぶことがあるので、連動する射出口は170度までにしてください: {0}	Aim limit over 170 degrees. Bones can jump near straight back, so keep linked emitters at 170 degrees or less: {0}
 check.emitter.no_pivot	Target Rotation Transform がありません	No Target Rotation Transform set
-check.emitter.unlisted	どの GunnerRig の射出口の一覧にも入っていません	Not in any GunnerRig's emitter list
+check.emitter.unlisted	どの GunnerController の射出口の一覧にも入っていません	Not in any GunnerController's emitter list
 check.emitter.no_constraint	Target Rotation Transform が先端のボーン {0} の下になく、VRC Parent Constraint もないため、ボーンに追従しません	The Target Rotation Transform is not under the tip bone {0} and there is no VRC Parent Constraint, so it does not follow the bone
 check.emitter.constraint_no_source	VRC Parent Constraint の Source が空です	The VRC Parent Constraint has an empty source
 check.emitter.no_anim_fire	撃つ前のクリップ {0} に Animation Event(SendCustomEvent、_AnimFire)がないため、撃てません	Pre-fire clip {0} has no Animation Event (SendCustomEvent, _AnimFire), so it never shoots
 check.rig.animator_unsynced	Animator のレイヤーやパラメーターが、射出口のクリップと合っていません。「Animator にそろえる」を押してください	The Animator's layers or parameters do not match the emitters' clips. Press Sync Animator
 check.particle.not_world	パーティクル {0} が World simulation space ではありません	Particles {0} are not in World simulation space
 check.particle.autoplay	パーティクル {0} が自動で再生されます(Play On Awake / Looping)	Particles {0} play by themselves (Play On Awake / Looping)
-check.hand.no_rig	GunnerRig が未設定です	No GunnerRig set
+check.hand.no_rig	GunnerController が未設定です	No GunnerController set
 check.hand.no_input	GunnerPickupInput が未設定です	No GunnerPickupInput set
 check.hand.input_unwired	入力の Controller がこの球を指していません	The input's Controller is not this ball
 check.hand.window_single	この球が使う射出口の中に、撃ち方が「連射」のものがないため、「離してから」は効きません	None of this ball's emitters fires in Stream mode, so "After release" has no effect
@@ -45,16 +45,16 @@ check.input.no_pickup	同じ GameObject に VRC Pickup がありません	No VRC
 check.input.pickup_elsewhere	Pickup の欄が別の物を指しています	The Pickup field points elsewhere
 check.input.autohold	AutoHold が Yes でないため、トリガーが届きません	AutoHold is not Yes, so the trigger never arrives
 check.input.no_object_sync	VRC Object Sync がなく、ほかの人には球が動いて見えません	No VRC Object Sync: others will not see the ball move
-check.stream.unused	どの GunnerRig からも使われていません	Not used by any GunnerRig
-GunnerRig.section.emitters	射出口	Emitters
-GunnerRig.section.hit	当たり判定	Hit detection
-GunnerRig.section.shot	射撃	Shooting
-GunnerRig.section.bone	ボーン連動	Bone link
-GunnerRig.about	指定した位置から弾やパーティクルを撃ち出す部品。	Shoots bullets or particles from the set positions.
-GunnerRig.emitters.numberNote	並べ替え・外すと射出口の番号が変わるので、「Animator にそろえる」を押し直し、GunnerHandController の useEmitters と GunnerAutoAim の emitterSwitches・firePayloads も直す	Reordering or removing emitters changes their numbers, so press Sync Animator again and update useEmitters on GunnerHandController and emitterSwitches and firePayloads on GunnerAutoAim
-GunnerRig.emitters.multi	複数選択中は射出口を編集できません	Emitters cannot be edited while multiple objects are selected
-GunnerEmitter.about	射出口1つの設定。GunnerRig の射出口の一覧に入れて使う。	Settings for one emitter. Add it to a GunnerRig's emitter list.
-GunnerEmitter.owner	射出口 {0}(GunnerRig: {1})	Emitter {0} (GunnerRig: {1})
+check.stream.unused	どの GunnerController からも使われていません	Not used by any GunnerController
+GunnerController.section.emitters	射出口	Emitters
+GunnerController.section.hit	当たり判定	Hit detection
+GunnerController.section.shot	射撃	Shooting
+GunnerController.section.bone	ボーン連動	Bone link
+GunnerController.about	指定した位置から弾やパーティクルを撃ち出す部品。	Shoots bullets or particles from the set positions.
+GunnerController.emitters.numberNote	並べ替え・外すと射出口の番号が変わるので、「Animator にそろえる」を押し直し、GunnerHandController の useEmitters と GunnerAutoAim の emitterSwitches・firePayloads も直す	Reordering or removing emitters changes their numbers, so press Sync Animator again and update useEmitters on GunnerHandController and emitterSwitches and firePayloads on GunnerAutoAim
+GunnerController.emitters.multi	複数選択中は射出口を編集できません	Emitters cannot be edited while multiple objects are selected
+GunnerEmitter.about	射出口1つの設定。GunnerController の射出口の一覧に入れて使う。	Settings for one emitter. Add it to a GunnerController's emitter list.
+GunnerEmitter.owner	射出口 {0}(GunnerController: {1})	Emitter {0} (GunnerController: {1})
 GunnerEmitter.pivot	Target Rotation Transform	Target Rotation Transform
 GunnerEmitter.pivot.tip	狙いで回し、弾を出す Transform。+Z が撃つ向きの初期値	The Transform the aim turns and shots leave from. +Z is the rest direction
 GunnerEmitter.linkBones	連動ボーン(根元 → 先端)	Linked bones (root → tip)
@@ -69,33 +69,33 @@ GunnerEmitter.shotParticle.tip	撃つときに出すパーティクル。Simulat
 GunnerEmitter.bones.add	+ 親のボーンを足す	+ Add parent bone
 GunnerEmitter.followed	追従先(VRC Parent Constraint)	Follows (VRC Parent Constraint)
 GunnerEmitter.followed.none	なし	None
-GunnerRig.movers	動く物	Moving objects
-GunnerRig.movers.tip	当たった跡がこの物に付いて動く	Hits on these follow them
-GunnerRig.receivers	受け手	Receivers
-GunnerRig.receivers.tip	着弾を知らせる相手	Notified of every hit
-GunnerRig.stream	連射の部品	Stream component
-GunnerRig.stream.tip	連射に使う GunnerStream。連射の量・見た目・当たり方は射出口の部品(GunnerEmitter)で決める	The GunnerStream used for streams. Set the rate, look and hits on each GunnerEmitter
+GunnerController.movers	動く物	Moving objects
+GunnerController.movers.tip	当たった跡がこの物に付いて動く	Hits on these follow them
+GunnerController.receivers	受け手	Receivers
+GunnerController.receivers.tip	着弾を知らせる相手	Notified of every hit
+GunnerController.stream	連射の部品	Stream component
+GunnerController.stream.tip	連射に使う GunnerStream。連射の量・見た目・当たり方は射出口の部品(GunnerEmitter)で決める	The GunnerStream used for streams. Set the rate, look and hits on each GunnerEmitter
 GunnerEmitter.fireMode	撃ち方	Fire mode
 GunnerEmitter.fireMode.opt	単発|連射	Single|Stream
 GunnerEmitter.fireMode.tip	トリガーを押したときの、この射出口の撃ち方。単発: 押すたびに1回撃つ。連射: 押している間、出し続ける	How this emitter shoots when the trigger is pressed. Single: one shot per press. Stream: keeps shooting while held
-GunnerRig.maxHits	記録数	Hit records
-GunnerRig.fireAnimator	撃つ前のアニメ	Pre-fire animator
-GunnerRig.fireAnimator.tip	撃つ前にアニメを流す Animator。撃つ前のクリップを入れた射出口は、アニメの合図(_AnimFire)で撃つ。クリップが空の射出口と、この欄が空のときはすぐ撃つ。rig は Animator と同じ GameObject に置く	Animator played before shooting. Emitters with a pre-fire clip shoot on the animation's signal (_AnimFire). Emitters without one, or with this field empty, shoot at once. Put the rig on the same GameObject as the Animator
-GunnerRig.syncAnimator	Animator にそろえる	Sync Animator
-GunnerRig.syncAnimator.noController	「Animator にそろえる」: 撃つ前のアニメ(fireAnimator)に Animator Controller が入っていません(Override Controller は使えません)	Sync Animator: the pre-fire animator (fireAnimator) has no Animator Controller (Override Controllers are not supported)
+GunnerController.maxHits	記録数	Hit records
+GunnerController.fireAnimator	撃つ前のアニメ	Pre-fire animator
+GunnerController.fireAnimator.tip	撃つ前にアニメを流す Animator。撃つ前のクリップを入れた射出口は、アニメの合図(_AnimFire)で撃つ。クリップが空の射出口と、この欄が空のときはすぐ撃つ。rig は Animator と同じ GameObject に置く	Animator played before shooting. Emitters with a pre-fire clip shoot on the animation's signal (_AnimFire). Emitters without one, or with this field empty, shoot at once. Put the rig on the same GameObject as the Animator
+GunnerController.syncAnimator	Animator にそろえる	Sync Animator
+GunnerController.syncAnimator.noController	「Animator にそろえる」: 撃つ前のアニメ(fireAnimator)に Animator Controller が入っていません(Override Controller は使えません)	Sync Animator: the pre-fire animator (fireAnimator) has no Animator Controller (Override Controllers are not supported)
 GunnerEmitter.preFireClip	撃つ前のクリップ	Pre-fire clip
 GunnerEmitter.preFireClip.tip	撃つ前に流すクリップ。撃つ瞬間に Animation Event(SendCustomEvent、_AnimFire)を置く。空ならすぐ撃つ。入れたら rig の「Animator にそろえる」を押す。同じ部位を動かす射出口には同じクリップを入れる	Clip played before shooting. Put an Animation Event (SendCustomEvent, _AnimFire) at the moment to shoot. Empty: shoot at once. After setting it, press Sync Animator on the rig. Use the same clip on emitters that move the same body part
 GunnerEmitter.postFireClip	撃った後のクリップ	Post-fire clip
 GunnerEmitter.postFireClip.tip	撃った後に流すクリップ。空なら休みに戻る	Clip played after shooting. Empty: return to rest
-GunnerRig.maxHits.tip	この端末で記録する着弾の数(1〜16)。Android で減らしても PC とずれない	Hits recorded on this device (1-16). Lowering it on Android stays in step with PC
+GunnerController.maxHits.tip	この端末で記録する着弾の数(1〜16)。Android で減らしても PC とずれない	Hits recorded on this device (1-16). Lowering it on Android stays in step with PC
 GunnerEmitter.shotSpeed	弾の速さ(m/秒)	Shot speed (m/s)
 GunnerEmitter.shotSpeed.tip	メートル毎秒	Metres per second
 GunnerEmitter.maxRange	射程(m)	Range (m)
 GunnerEmitter.maxRange.tip	メートル	Metres
 GunnerEmitter.castRadius	弾の半径(m)	Shot radius (m)
 GunnerEmitter.castRadius.tip	当たり判定の太さ(メートル)	Hit test thickness (metres)
-GunnerRig.playerRadius	体の太さ	Body radius
-GunnerRig.playerRadius.tip	目の高さに対する割合	Share of the eye height
+GunnerController.playerRadius	体の太さ	Body radius
+GunnerController.playerRadius.tip	目の高さに対する割合	Share of the eye height
 GunnerEmitter.aimMaxAngle	可動域(度、0 = 60)	Aim limit (°, 0 = 60)
 GunnerEmitter.aimMaxAngle.tip	この射出口が狙える角度の上限(度)。撃つ向きの初期値から測る。0 なら 60 度	Aim limit for this emitter (degrees), measured from the rest direction. 0 = 60 degrees
 GunnerEmitter.streamRate	連射の量(個/秒)	Stream rate (/s)
@@ -107,8 +107,8 @@ GunnerEmitter.streamHitInterval	当たりの間隔(秒)	Hit interval (s)
 GunnerEmitter.streamHitInterval.tip	当たり続ける時の、射出口ごとの記録の間隔(秒)	Keep hitting: seconds between records per emitter
 GunnerEmitter.streamCollide	連射の当たり判定	Stream collision
 GunnerEmitter.streamCollide.tip	入れると、この射出口の連射が当たった所を記録する。球などが実行中に、すべての射出口の判定をまとめて切ることがある	When on, this emitter's stream records hits. A controller may switch collision off for all emitters at runtime
-GunnerRig.boneFollow	最初から連動する	Linked at start
-GunnerRig.boneFollow.tip	開始時に、狙いに合わせてボーンを回すかどうか。実行中は BoneFollowOn / BoneFollowOff で切り替える	Whether the bones turn with the aim at start. Switch at runtime with BoneFollowOn / BoneFollowOff
+GunnerController.boneFollow	最初から連動する	Linked at start
+GunnerController.boneFollow.tip	開始時に、狙いに合わせてボーンを回すかどうか。実行中は BoneFollowOn / BoneFollowOff で切り替える	Whether the bones turn with the aim at start. Switch at runtime with BoneFollowOn / BoneFollowOff
 GunnerEmitter.boneStrength	連動の割合(0〜1)	Link share (0-1)
 GunnerEmitter.boneStrength.tip	狙いの角度のうち、ボーンが受け持つ割合(0〜1)。残りは射出口だけが向く	Share of the aim angle the bones take (0-1). The emitter turns the rest by itself
 GunnerEmitter.boneYawMax	左右の上限(度)	Yaw limit (°)
@@ -139,7 +139,7 @@ GunnerEmitter.impactParticle	着弾パーティクル	Impact particles
 GunnerEmitter.impactParticle.tip	この射出口の弾が当たった点で出すパーティクル。空なら出さない。+Z が飛び散る向き。Simulation Space は World にする	Particles shown where this emitter's shot hits. Empty = none. +Z is the splash direction. Set Simulation Space to World
 GunnerEmitter.impactBurst	着弾パーティクルの数	Impact burst
 GunnerEmitter.impactBurst.tip	1回の着弾で出す数(最低1)	Particles per hit (at least 1)
-GunnerHandController.rig	GunnerRig	GunnerRig
+GunnerHandController.rig	GunnerController	GunnerController
 GunnerHandController.rig.tip	この球で撃つ rig	The rig this ball shoots
 GunnerHandController.input	入力	Input
 GunnerHandController.input.tip	同じ球の GunnerPickupInput。持つ手とトリガーを読む	The GunnerPickupInput on this ball. Reads the hand and the trigger
@@ -160,7 +160,7 @@ GunnerHandController.resetAimOnEnd	終わったら狙いを戻す	Reset aim on e
 GunnerHandController.resetAimOnEnd.tip	持ち終えたら rig の狙いを外し、射出口を休みの向きに戻す	When holding ends, clear the rig's aim so the emitters return to rest
 GunnerHandController.useEmitters	使う射出口の組	Emitter set
 GunnerHandController.useEmitters.tip	持っている間に狙い・連射・一斉射に使う射出口(ビット: 1 = 射出口0、2 = 射出口1、3 = 両方)。0 ならすべて(今までどおり)	Emitters used for aim, stream and volley while held (bits: 1 = emitter 0, 2 = emitter 1, 3 = both). 0 = all (as before)
-GunnerPickupInput.controller	Controller	Controller
+GunnerPickupInput.controller	Hand Controller	Hand Controller
 GunnerPickupInput.controller.tip	入力を渡す GunnerHandController	The GunnerHandController that receives the input
 GunnerPickupInput.pickup	Pickup	Pickup
 GunnerPickupInput.pickup.tip	空ならこの GameObject の VRC Pickup	Empty = the VRC Pickup on this GameObject

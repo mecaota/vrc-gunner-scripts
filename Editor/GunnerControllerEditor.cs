@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace Mecaota.Gunner.EditorTools
 {
-    /// <summary>GunnerRig のインスペクタ(射出口の一覧と共通の設定)。</summary>
-    [CustomEditor(typeof(GunnerRig)), CanEditMultipleObjects]
-    public class GunnerRigEditor : GunnerInspectorBase
+    /// <summary>GunnerController のインスペクタ(射出口の一覧と共通の設定)。</summary>
+    [CustomEditor(typeof(GunnerController)), CanEditMultipleObjects]
+    public class GunnerControllerEditor : GunnerInspectorBase
     {
         ReorderableList list;
 
@@ -21,7 +21,7 @@ namespace Mecaota.Gunner.EditorTools
                     rect.height = EditorGUIUtility.singleLineHeight;
                     EditorGUI.PropertyField(rect, element, RowLabel(element.objectReferenceValue as GunnerEmitter, i));
                 },
-                onCanAddCallback = l => l.count < GunnerRig.MaxEmitters,
+                onCanAddCallback = l => l.count < GunnerController.MaxEmitters,
                 onAddCallback = l => GunnerEditorUtil.Append(l.serializedProperty, null),
                 // 「外す」は一覧から外すだけで、GameObject は消さない。
                 onRemoveCallback = l =>
@@ -34,7 +34,7 @@ namespace Mecaota.Gunner.EditorTools
 
         protected override void DrawBody()
         {
-            bool open = Foldout("GunnerRig.section.emitters");
+            bool open = Foldout("GunnerController.section.emitters");
             var muzzles = serializedObject.FindProperty("muzzles");
             if (targets.Length == 1) CountAt(GUILayoutUtility.GetLastRect(), muzzles.arraySize);
             if (open)
@@ -42,23 +42,23 @@ namespace Mecaota.Gunner.EditorTools
                 if (targets.Length == 1)
                 {
                     list.DoLayoutList();
-                    EditorGUILayout.LabelField(T("GunnerRig.emitters.numberNote"), EditorStyles.wordWrappedMiniLabel);
+                    EditorGUILayout.LabelField(T("GunnerController.emitters.numberNote"), EditorStyles.wordWrappedMiniLabel);
                 }
                 else
-                    EditorGUILayout.HelpBox(T("GunnerRig.emitters.multi"), MessageType.Info);
+                    EditorGUILayout.HelpBox(T("GunnerController.emitters.multi"), MessageType.Info);
             }
 
-            if (Foldout("GunnerRig.section.shot"))
+            if (Foldout("GunnerController.section.shot"))
             {
                 Fields("stream", "fireAnimator");
-                if (GUILayout.Button(T("GunnerRig.syncAnimator")))
-                    foreach (GunnerRig r in targets) GunnerAnimatorSync.Sync(r);
+                if (GUILayout.Button(T("GunnerController.syncAnimator")))
+                    foreach (GunnerController r in targets) GunnerAnimatorSync.Sync(r);
             }
 
-            if (Foldout("GunnerRig.section.hit", false))
+            if (Foldout("GunnerController.section.hit", false))
                 Fields("receivers", "movers", "playerRadius", "maxHits");
 
-            if (Foldout("GunnerRig.section.bone", false))
+            if (Foldout("GunnerController.section.bone", false))
                 Field("boneFollow");
         }
 

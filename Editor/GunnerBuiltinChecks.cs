@@ -13,7 +13,7 @@ namespace Mecaota.Gunner.EditorTools
     [InitializeOnLoad]
     public sealed class GunnerBuiltinChecks : IGunnerCheckProvider
     {
-        const int ManyHits = GunnerRig.SyncSlots;
+        const int ManyHits = GunnerController.SyncSlots;
 
         static GunnerBuiltinChecks() => GunnerChecks.Register(new GunnerBuiltinChecks());
 
@@ -21,7 +21,7 @@ namespace Mecaota.Gunner.EditorTools
         {
             switch (c)
             {
-                case GunnerRig rig: Rig(rig, into); break;
+                case GunnerController rig: Rig(rig, into); break;
                 case GunnerEmitter muzzle: Emitter(muzzle, into); break;
                 case GunnerHandController hand: Hand(hand, into); break;
                 case GunnerPickupInput input: PickupInput(input, into); break;
@@ -31,13 +31,13 @@ namespace Mecaota.Gunner.EditorTools
 
         // ---------------- rig ----------------
 
-        static void Rig(GunnerRig rig, List<GunnerCheck> into)
+        static void Rig(GunnerController rig, List<GunnerCheck> into)
         {
             var muzzles = rig.muzzles ?? new GunnerEmitter[0];
             if (muzzles.Length == 0)
                 into.Add(new GunnerCheck(E.Error, "check.rig.no_emitter", rig));
-            if (muzzles.Length > GunnerRig.MaxEmitters)
-                into.Add(new GunnerCheck(E.Error, "check.rig.too_many_emitters", rig, null, GunnerRig.MaxEmitters.ToString()));
+            if (muzzles.Length > GunnerController.MaxEmitters)
+                into.Add(new GunnerCheck(E.Error, "check.rig.too_many_emitters", rig, null, GunnerController.MaxEmitters.ToString()));
             if (muzzles.Contains(null))
                 into.Add(new GunnerCheck(E.Error, "check.rig.null_emitter", rig,
                     () => GunnerEditorUtil.Edit(rig, so => GunnerEditorUtil.RemoveNulls(so, "muzzles"))));
@@ -73,7 +73,7 @@ namespace Mecaota.Gunner.EditorTools
                     }
         }
 
-        static void Receivers(GunnerRig rig, List<GunnerCheck> into)
+        static void Receivers(GunnerController rig, List<GunnerCheck> into)
         {
             var listed = rig.receivers ?? new GunnerHitReceiver[0];
             bool hasNull = false;
@@ -94,7 +94,7 @@ namespace Mecaota.Gunner.EditorTools
         static Motion Real(Motion m) { return m != null ? m : null; }
 
         // 押した後に射出口やクリップを変えると、撃つ前のアニメが流れないか、別の射出口のアニメが流れる。
-        static void PreFireSynced(GunnerRig rig, GunnerEmitter[] muzzles, List<GunnerCheck> into)
+        static void PreFireSynced(GunnerController rig, GunnerEmitter[] muzzles, List<GunnerCheck> into)
         {
             var controller = GunnerAnimatorSync.ControllerOf(rig);
             if (controller == null) return;
@@ -120,7 +120,7 @@ namespace Mecaota.Gunner.EditorTools
         const int LongChain = 6;
 
         // 鎖は同じ先端のボーンを持つ射出口で共有する。別の鎖にも入っているボーンは、回転が二重に書かれる。
-        static void SharedBones(GunnerRig rig, List<GunnerCheck> into)
+        static void SharedBones(GunnerController rig, List<GunnerCheck> into)
         {
             var muzzles = (rig.muzzles ?? new GunnerEmitter[0]).Where(m => GunnerEmitterEditor.Tip(m) != null).ToList();
             var tips = new HashSet<Transform>(muzzles.Select(GunnerEmitterEditor.Tip));
@@ -202,7 +202,7 @@ namespace Mecaota.Gunner.EditorTools
                     () => GunnerEditorUtil.Edit(m, so => so.FindProperty("aimMaxAngle").floatValue = LinkMax), angle.ToString("0.#")));
 
             var clip = m.preFireClip;
-            if (clip != null && rig != null && rig.fireAnimator != null && !AnimationUtility.GetAnimationEvents(clip).Any(e => e.functionName == "SendCustomEvent" && e.stringParameter == nameof(GunnerRig._AnimFire)))
+            if (clip != null && rig != null && rig.fireAnimator != null && !AnimationUtility.GetAnimationEvents(clip).Any(e => e.functionName == "SendCustomEvent" && e.stringParameter == nameof(GunnerController._AnimFire)))
                 into.Add(new GunnerCheck(E.Warning, "check.emitter.no_anim_fire", m, null, clip.name));
 
             LinkBones(m, into);
@@ -250,18 +250,18 @@ namespace Mecaota.Gunner.EditorTools
             }
         }
 
-        static bool IsStream(GunnerRig rig, int i) => rig.muzzles != null && i < rig.muzzles.Length && rig.muzzles[i] != null && rig.muzzles[i].fireMode == GunnerRig.FireStream;
+        static bool IsStream(GunnerController rig, int i) => rig.muzzles != null && i < rig.muzzles.Length && rig.muzzles[i] != null && rig.muzzles[i].fireMode == GunnerController.FireStream;
 
         // mask: 数える射出口の組(0 = 全部)。
-        static int StreamCount(GunnerRig rig, int mask)
+        static int StreamCount(GunnerController rig, int mask)
         {
-            int count = rig.muzzles != null ? Mathf.Min(rig.muzzles.Length, GunnerRig.MaxEmitters) : 0;
+            int count = rig.muzzles != null ? Mathf.Min(rig.muzzles.Length, GunnerController.MaxEmitters) : 0;
             int n = 0;
             for (int i = 0; i < count; i++) if (IsStream(rig, i) && (mask == 0 || (mask & (1 << i)) != 0)) n++;
             return n;
         }
 
-        static void AddReceiver(GunnerRig rig, GunnerHitReceiver r)
+        static void AddReceiver(GunnerController rig, GunnerHitReceiver r)
         {
             GunnerEditorUtil.Edit(rig, so =>
             {
@@ -276,7 +276,7 @@ namespace Mecaota.Gunner.EditorTools
         {
             if (hand.rig == null)
             {
-                var rigs = GunnerEditorUtil.FindInScenes<GunnerRig>();
+                var rigs = GunnerEditorUtil.FindInScenes<GunnerController>();
                 System.Action fix = null;
                 if (rigs.Count == 1) fix = () => GunnerEditorUtil.Edit(hand, so => so.FindProperty("rig").objectReferenceValue = rigs[0]);
                 into.Add(new GunnerCheck(E.Error, "check.hand.no_rig", hand, fix));
@@ -346,7 +346,7 @@ namespace Mecaota.Gunner.EditorTools
 
         static void Stream(GunnerStream stream, List<GunnerCheck> into)
         {
-            foreach (var rig in GunnerEditorUtil.FindInScenes<GunnerRig>())
+            foreach (var rig in GunnerEditorUtil.FindInScenes<GunnerController>())
                 if (rig.stream == stream) return;
             into.Add(new GunnerCheck(E.Warning, "check.stream.unused", stream));
         }

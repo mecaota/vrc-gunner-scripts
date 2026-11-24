@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace Mecaota.Gunner.Tests
 {
-    // 狙いと連動の式の純計算のモデル(Models)。式は GunnerRig.cs の写しで、Unity の外でも Tools~/verify/build.sh が同じものを
+    // 狙いと連動の式の純計算のモデル(Models)。式は GunnerController.cs の写しで、Unity の外でも Tools~/verify/build.sh が同じものを
     // 動かす。式を変えたら、モデルも同じように直す。結果の最後の行が「全部 OK」なら合格。
     public class ModelTests
     {

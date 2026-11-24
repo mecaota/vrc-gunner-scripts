@@ -25,8 +25,8 @@ Download `com.mecaota.gunner-x.y.z.zip` from [Releases](https://github.com/mecao
 
 ## How shooting works
 
-1. **Emitters.** Each emitter is a `GunnerEmitter` component that holds its settings. The +Z axis of its `pivot` Transform is the shooting direction (the rest direction when nothing aims it). The order of the rig's `muzzles` list gives the emitter numbers. A rig has up to 16 emitters (`GunnerRig.MaxEmitters`). Each emitter can have its own `ParticleSystem` in `shotParticle` (World simulation space) for the visible shot. The editor tools place an emitter at `rig/muzzles/<name>`: the `GunnerEmitter` (and a VRC Parent Constraint when it follows a bone) is on `<name>`, and its child `Target Rotation Transform` is the `pivot` (the field is shown as Target Rotation Transform in the Inspector). Do not use a Transform with a constraint as the `pivot`; the constraint overwrites the aim. While the constraint is locked, you cannot move `<name>` in edit mode; unlock it (or move `Target Rotation Transform`) to adjust.
-2. **The rig.** `GunnerRig` owns everything else: aiming, hit tests, the synced hit records and the receiver list. It uses Manual sync, so it cannot share a GameObject with VRC Object Sync (put it on a child). Shooting takes ownership of the rig.
+1. **Emitters.** Each emitter is a `GunnerEmitter` component that holds its settings. The +Z axis of its `pivot` Transform is the shooting direction (the rest direction when nothing aims it). The order of the rig's `muzzles` list gives the emitter numbers. A rig has up to 16 emitters (`GunnerController.MaxEmitters`). Each emitter can have its own `ParticleSystem` in `shotParticle` (World simulation space) for the visible shot. The editor tools place an emitter at `rig/muzzles/<name>`: the `GunnerEmitter` (and a VRC Parent Constraint when it follows a bone) is on `<name>`, and its child `Target Rotation Transform` is the `pivot` (the field is shown as Target Rotation Transform in the Inspector). Do not use a Transform with a constraint as the `pivot`; the constraint overwrites the aim. While the constraint is locked, you cannot move `<name>` in edit mode; unlock it (or move `Target Rotation Transform`) to adjust.
+2. **The rig.** `GunnerController` owns everything else: aiming, hit tests, the synced hit records and the receiver list. It uses Manual sync, so it cannot share a GameObject with VRC Object Sync (put it on a child). Shooting takes ownership of the rig.
 3. **Single shots.** `Fire()` shoots once from every Single emitter in the aim set (all by default). `_FireWith(emitter, payload)` shoots a single shot from one emitter, whatever its fire mode, with an integer payload, and `_FireVolley(payload, mask, offsets)` picks the emitters with a bit mask and adds per-emitter angle offsets. A shot that hits travels at its emitter's `shotSpeed`; receivers hear about the hit when it arrives.
 4. **Streams.** A stream keeps emitting particles while it runs. `StartStream()` / `StopStream()` (or `_StartStreamWith(payload)`) start and stop it on the Stream emitters in the aim set. With no Stream emitter in the aim set, `StartStream()` does nothing. The rig needs a `GunnerStream` in its `stream` field. `StopStream()` only stops a stream this device started.
 5. **Trigger helpers.** Each emitter has a fire mode (`fireMode`: Single or Stream). `TriggerDown()` calls `StartStream()` and then `Fire()`. `TriggerUp()` calls `StopStream()`.
@@ -85,7 +85,7 @@ Each emitter's `linkBones` and bone fields apply to it alone. When emitters shar
 
 ### Built-in sounds and impact particles
 
-`GunnerRig` can play a fire sound and an impact sound, and burst particles at the hit point, by itself. All of them are set on each `GunnerEmitter`. Every device plays them from the fire and hit events; nothing extra is synced.
+`GunnerController` can play a fire sound and an impact sound, and burst particles at the hit point, by itself. All of them are set on each `GunnerEmitter`. Every device plays them from the fire and hit events; nothing extra is synced.
 
 | Field | Default | Meaning |
 |---|---|---|
@@ -127,7 +127,7 @@ Setup:
 
 | Field | Default | Meaning |
 |---|---|---|
-| `rig` | empty | The `GunnerRig` to drive. |
+| `rig` | empty | The `GunnerController` to drive. |
 | `zone` | empty = the BoxCollider on this GameObject | The box. |
 | `interval` | 0.2 | Seconds between target and aim updates. |
 | `fireInterval` | 3 | Seconds between shots, counted from one `_FireWith` to the next. It starts aiming one or two ticks (`interval` each) before a shot is due. With a pre-fire clip longer than this, the next shot waits for the clip to end. |
@@ -151,7 +151,7 @@ How it works:
 4. Call `TriggerDown()` / `TriggerUp()` from your own script.
 5. Open **Tools > Gunner > Check Window** and fix anything it lists.
 
-A sample prefab (`Prefab/GunnerRig.prefab`, `Prefab/GunnerHandController.prefab`) and scene (`Scene/Gunner.unity`) are included.
+A sample prefab (`Prefab/GunnerController.prefab`, `Prefab/GunnerHandController.prefab`) and scene (`Scene/Gunner.unity`) are included.
 
 ## Editor tools
 
@@ -186,7 +186,7 @@ Breaking: each emitter is now a `GunnerEmitter` component, and the rig's per-emi
 ```
 Spider                (has the Animator)
 ├─ Armature            (the bone is here)
-└─ GunnerRig
+└─ GunnerController
    └─ muzzles
       └─ mouth      GunnerEmitter + VRC Parent Constraint (source: the bone)
          └─ Pivot   the pivot: the aim turns this
@@ -220,7 +220,7 @@ Removals and clean-up (see CHANGELOG.md for the full list). `GunnerSounds` is re
 ## Changes in 0.6.0
 
 - `GunnerAutoAim`: aim at and shoot players whose feet are inside a box (see "Auto aim").
-- Built-in fire and impact sounds on `GunnerRig` (see "Built-in sounds and impact particles"). Empty clips = silent, the same as before. `GunnerSounds` is unchanged; clips on both play twice.
+- Built-in fire and impact sounds on `GunnerController` (see "Built-in sounds and impact particles"). Empty clips = silent, the same as before. `GunnerSounds` is unchanged; clips on both play twice.
 
 ## Changes in 0.5.0
 

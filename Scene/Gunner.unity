@@ -274,7 +274,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2041450322365002355, guid: 06e6e4e46c3a27b4f877b5c6ad3ccb6c, type: 3}
       propertyPath: m_Name
-      value: GunnerRig
+      value: GunnerController
       objectReference: {fileID: 0}
     - target: {fileID: 5022160871835713446, guid: 06e6e4e46c3a27b4f877b5c6ad3ccb6c, type: 3}
       propertyPath: TrailModule.lifetime.scalar

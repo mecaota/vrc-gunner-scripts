@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Mecaota.Gunner
 {
-    // 1つの GunnerRig の連射: 連射の粒子を出し、その経路を持ち、当たる所を見つける(持ち主)。
+    // 1つの GunnerController の連射: 連射の粒子を出し、その経路を持ち、当たる所を見つける(持ち主)。
     // rig の PostLateUpdate → _StepMasked からだけ動かされる。自分のイベントは持たない。
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class GunnerStream : UdonSharpBehaviour
@@ -19,7 +19,7 @@ namespace Mecaota.Gunner
         [System.NonSerialized] public float[] reach;
         [System.NonSerialized] public bool[] active;
 
-        private GunnerRig rig;
+        private GunnerController rig;
         private bool ready;
         private int count;
         private int cap;
@@ -46,7 +46,7 @@ namespace Mecaota.Gunner
         private float[] rTime;
         private bool[] rAlive;
 
-        public void _Init(GunnerRig owner)
+        public void _Init(GunnerController owner)
         {
             if (ready || owner == null) return;
             ready = true;

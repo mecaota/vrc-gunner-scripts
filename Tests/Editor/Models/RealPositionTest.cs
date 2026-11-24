@@ -44,7 +44,7 @@ namespace Mecaota.Gunner.Tests.Models
             return hi;
         }
 
-        // GunnerRig.Wish の写し(向きの指定 → 射出口ごとの角度の円錐に収める)。Unity の RotateTowards(角度だけ回す)を写す。
+        // GunnerController.Wish の写し(向きの指定 → 射出口ごとの角度の円錐に収める)。Unity の RotateTowards(角度だけ回す)を写す。
         static Vector3 Wish(Vector3 rest, Vector3 w, float limit)
         {
             w = Vector3.Normalize(w);
@@ -220,7 +220,7 @@ namespace Mecaota.Gunner.Tests.Models
         static Quaternion EulerU(float x, float y, float z) =>
             Quaternion.CreateFromAxisAngle(Vector3.UnitY, y * Deg) * Quaternion.CreateFromAxisAngle(Vector3.UnitX, x * Deg) * Quaternion.CreateFromAxisAngle(Vector3.UnitZ, z * Deg);
 
-        // GunnerRig.AxisTurn の写し
+        // GunnerController.AxisTurn の写し
         static Quaternion AxisTurn(float yaw, float pitch)
         {
             float angle = (float)Math.Sqrt(yaw * yaw + pitch * pitch);

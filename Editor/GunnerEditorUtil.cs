@@ -259,7 +259,7 @@ namespace Mecaota.Gunner.EditorTools
         }
 
         /// <summary>どれかの射出口の弾が layer に当たるか(パーティクルの Collision > Collides With)。</summary>
-        public static bool HitsLayer(GunnerRig rig, int layer) =>
+        public static bool HitsLayer(GunnerController rig, int layer) =>
             (rig.muzzles ?? new GunnerEmitter[0]).Any(m => m != null && m.shotParticle != null && (m.shotParticle.collision.collidesWith.value & (1 << layer)) != 0);
     }
 }

@@ -83,7 +83,7 @@ Gunner は、VRChat のワールド向けのギミックです。アバターで
 
 ```
 Gun
-└ GunnerRig
+└ GunnerController
    ├ muzzles
    │  └ Emitter
    │     └ Target Rotation Transform
@@ -91,7 +91,7 @@ Gun
    └ Parts
 ```
 
-- `GunnerRig`: 全体をまとめる部品です。
+- `GunnerController`: 全体をまとめる部品です。
 - `Emitter`: 弾の出る「場所」です。4 章で銃口へ動かします。
 - `Target Rotation Transform`: 弾の「向き」です。+Z が撃つ向きです。GunnerEmitter の「Target Rotation Transform」欄に入っています。
 - `Shot`: 弾のパーティクルです。
@@ -101,9 +101,9 @@ Gun
 
 UdonBehaviour の Sync Method が Continuous と表示されても、そのままでかまいません。`Gun` の VRC Object Sync に合った値です。
 
-![ヒエラルキー。Gun の下に GunnerRig、muzzles、Emitter、Target Rotation Transform、Shot、Parts ができている](../img/ch3-02-hierarchy-rig.png)
+![ヒエラルキー。Gun の下に GunnerController、muzzles、Emitter、Target Rotation Transform、Shot、Parts ができている](../img/ch3-02-hierarchy-rig.png)
 
-![GunnerRig のインスペクター。「射出口」に Emitter、「連射の部品」に Parts が入っている](../img/ja/ch3-03a-inspector-gunnerrig.png)
+![GunnerController のインスペクター。「射出口」に Emitter、「連射の部品」に Parts が入っている](../img/ja/ch3-03a-inspector-gunnerrig.png)
 
 ![Emitter のインスペクター(GunnerEmitter)。すべて初期値](../img/ja/ch3-03b-inspector-gunneremitter.png)
 
@@ -134,16 +134,16 @@ UdonBehaviour の Sync Method が Continuous と表示されても、そのま�
 
 1. `Gun` に GunnerPickupInput を付ける。
 2. `Gun` に GunnerHandController を付ける。
-3. GunnerHandController の「GunnerRig」に `GunnerRig` を入れる。
+3. GunnerHandController の「GunnerController」に `GunnerController` を入れる。
 4. GunnerHandController の「入力(Input)」に、`Gun` の GunnerPickupInput を入れる。
-5. GunnerPickupInput の「Controller」に、`Gun` の GunnerHandController を入れる。
+5. GunnerPickupInput の「Hand Controller」に、`Gun` の GunnerHandController を入れる。
 6. GunnerPickupInput の「撃てる手(Shooting hand)」を「どちらでも(Either)」にする。初期値は左手です。
 
 GunnerPickupInput の「Pickup」と、GunnerHandController の「移動ロック(Move hold)」は、空のままにします。
 
 ![GunnerPickupInput のインスペクター。「Controller」に Gun が入り、「撃てる手」が「どちらでも」になっている](../img/ja/ch5-01a-inspector-pickupinput.png)
 
-![GunnerHandController のインスペクター。「GunnerRig」と「入力」が入り、「移動ロック」は空](../img/ja/ch5-01b-inspector-handcontroller.png)
+![GunnerHandController のインスペクター。「GunnerController」と「入力」が入り、「移動ロック」は空](../img/ja/ch5-01b-inspector-handcontroller.png)
 
 ## 6. 点検して撃つ
 
@@ -231,7 +231,7 @@ GunnerPickupInput の「Pickup」と、GunnerHandController の「移動ロッ�
 
 射出口をもう 1 つ足して、別の設定にします。
 
-1. `GunnerRig` を選ぶ。`Gun` を選んだままだと、次のメニューは使えません。
+1. `GunnerController` を選ぶ。`Gun` を選んだままだと、次のメニューは使えません。
 2. メニューの `GameObject > Gunner > Add Emitter` を選ぶ。
 3. `muzzles` の下に `Emitter_1` ができたことを確かめる。
 4. `Emitter_1` の「位置(Position)」を (0, 0, 0.255) にする。新しい射出口は rig の原点にできるので、4 章と同じように銃口へ動かします。

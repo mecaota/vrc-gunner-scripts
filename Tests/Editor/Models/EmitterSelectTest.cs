@@ -1,5 +1,5 @@
 // GunnerRig 0.4.0 の射出口の選び方・射出口ごとの角度・狙う組・暴れ止めを、Unity なしの純計算で確かめる。
-// 式は GunnerRig.cs の _SolveWithin / _SolveFrom / _SolveNearest / Wish / AimLimit / _SetAimEmitters / StepLinks の
+// 式は GunnerController.cs の _SolveWithin / _SolveFrom / _SolveNearest / Wish / AimLimit / _SetAimEmitters / StepLinks の
 // 暴れ止め / SteadyUp をそのまま写したもの(Vector3.Angle は Unity と同じ式)。
 using System;
 using System.Collections.Generic;

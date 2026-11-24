@@ -44,7 +44,7 @@ GameObject:
   - component: {fileID: 7083353351388670408}
   - component: {fileID: 7152672476999587889}
   m_Layer: 0
-  m_Name: GunnerRig
+  m_Name: GunnerController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

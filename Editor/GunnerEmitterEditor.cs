@@ -92,18 +92,18 @@ namespace Mecaota.Gunner.EditorTools
 
         void Reload()
         {
-            foreach (var rig in GunnerEditorUtil.FindInScenes<GunnerRig>())
+            foreach (var rig in GunnerEditorUtil.FindInScenes<GunnerController>())
             {
                 if (rig.muzzles == null || !targets.Any(t => System.Array.IndexOf(rig.muzzles, t) >= 0)) continue;
                 var backing = UdonSharpEditorUtility.GetBackingUdonBehaviour(rig);
-                if (backing != null) backing.SendCustomEvent(nameof(GunnerRig._LoadMuzzles));
+                if (backing != null) backing.SendCustomEvent(nameof(GunnerController._LoadMuzzles));
             }
         }
 
         /// <summary>muzzle を射出口に持つ rig と、その番号。無ければ null。</summary>
-        internal static GunnerRig RigOf(GunnerEmitter muzzle, out int index)
+        internal static GunnerController RigOf(GunnerEmitter muzzle, out int index)
         {
-            foreach (var rig in GunnerEditorUtil.FindInScenes<GunnerRig>())
+            foreach (var rig in GunnerEditorUtil.FindInScenes<GunnerController>())
             {
                 index = rig.muzzles != null ? System.Array.IndexOf(rig.muzzles, muzzle) : -1;
                 if (index >= 0) return rig;
@@ -127,7 +127,7 @@ namespace Mecaota.Gunner.EditorTools
         }
 
         // rig の AimLimit と同じ決まり。
-        internal static float AimLimit(GunnerEmitter muzzle) => muzzle.aimMaxAngle > 0f ? muzzle.aimMaxAngle : GunnerRig.DefaultAimLimit;
+        internal static float AimLimit(GunnerEmitter muzzle) => muzzle.aimMaxAngle > 0f ? muzzle.aimMaxAngle : GunnerController.DefaultAimLimit;
 
         void OnSceneGUI()
         {

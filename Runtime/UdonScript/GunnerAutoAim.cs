@@ -4,14 +4,14 @@ using VRC.SDKBase;
 
 namespace Mecaota.Gunner
 {
-    // 足元が範囲(BoxCollider)の中にいる人を、rig が自動で狙って撃つ。GunnerRig と同じ GameObject には置かない。
+    // 足元が範囲(BoxCollider)の中にいる人を、rig が自動で狙って撃つ。GunnerController と同じ GameObject には置かない。
     // 探して撃つのは rig の持ち主の端末だけ(_FireWith は呼んだ端末が rig を取るので、各自が撃つと取り合いになる)。
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class GunnerAutoAim : UdonSharpBehaviour
     {
         private const float MinEyeHeight = 0.2f;
 
-        public GunnerRig rig;                     // 対象の rig
+        public GunnerController rig;                     // 対象の rig
         public BoxCollider zone;                  // 範囲の箱。空 = 同じ GameObject の BoxCollider
         public float interval = 0.2f;             // 探して向ける間隔(秒)
         public float fireInterval = 3f;           // 撃つ間隔(秒)

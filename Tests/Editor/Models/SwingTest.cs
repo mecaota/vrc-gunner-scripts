@@ -30,7 +30,7 @@ namespace Mecaota.Gunner.Tests.Models
             if (axis.LengthSquared() < 1e-12f) axis = Vector3.UnitY;
             return Vector3.Transform(Vector3.UnitZ, Quaternion.CreateFromAxisAngle(Vector3.Normalize(axis), limit * Deg));
         }
-        // GunnerRig.AxisTurn の写し
+        // GunnerController.AxisTurn の写し
         static Quaternion AxisTurn(float yaw, float pitch)
         {
             float angle = (float)Math.Sqrt(yaw * yaw + pitch * pitch);
@@ -75,7 +75,7 @@ namespace Mecaota.Gunner.Tests.Models
                 float left = (float)Math.Sqrt(dy * dy + dp * dp);
                 float step = Math.Max(20f, left * 12f) * dt;
                 if (left <= step) { fy = ty; fp = tp; } else { fy += dy * step / left; fp += dp * step / left; }
-                // 射出口の向きと上の軸(GunnerRig.AimEmitter の写し)
+                // 射出口の向きと上の軸(GunnerController.AimEmitter の写し)
                 Vector3 em, up;
                 if (method == Axis)
                 {

@@ -3,14 +3,14 @@ using UnityEngine;
 
 namespace Mecaota.Gunner
 {
-    // 射出口1つの設定。GunnerRig が起動時に読む。
+    // 射出口1つの設定。GunnerController が起動時に読む。
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class GunnerEmitter : UdonSharpBehaviour
     {
         public Transform pivot;                   // +Z = 休み方向
         public ParticleSystem shotParticle;       // World シミュレーション空間
-        public int fireMode = GunnerRig.FireSingle;
-        public float aimMaxAngle;                 // 0 以下 = GunnerRig.DefaultAimLimit
+        public int fireMode = GunnerController.FireSingle;
+        public float aimMaxAngle;                 // 0 以下 = GunnerController.DefaultAimLimit
 
         public AudioSource fireSource;
         public AudioClip fireClip;

@@ -7,7 +7,7 @@ namespace Mecaota.Gunner
 {
     // 本体: 設定、同期する着弾の記録、射撃、当たり判定、単発、狙い、ボーンの連動、毎フレームの順番。
     [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
-    public class GunnerRig : UdonSharpBehaviour
+    public class GunnerController : UdonSharpBehaviour
     {
         // ---------------- 定数 ----------------
 

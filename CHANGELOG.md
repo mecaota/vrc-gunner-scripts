@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-11-25
+
 This version renames `GunnerRig` to `GunnerController` and merges `GunnerStream` into it, replaces the emitter's `pivot`, `linkBones` and limits with one list, and removes the `GameObject > Gunner` menus. Existing scenes need the steps below.
 
 この版では、`GunnerRig` を `GunnerController` に改名して `GunnerStream` をそこへ統合し、射出口の `pivot`・`linkBones`・可動域を 1 つの一覧にまとめ、`GameObject > Gunner` のメニューを削除しました。既存のシーンは、下の手順が要ります。

@@ -42,13 +42,13 @@ check.input.no_pickup	同じ GameObject に VRC Pickup がありません	No VRC
 check.input.pickup_elsewhere	Pickup の欄が別の物を指しています	The Pickup field points elsewhere
 check.input.autohold	AutoHold が Yes でないため、トリガーが届きません	AutoHold is not Yes, so the trigger never arrives
 check.input.no_object_sync	VRC Object Sync がなく、ほかの人には球が動いて見えません	No VRC Object Sync: others will not see the ball move
-GunnerController.section.emitters	射出口	Emitters
+GunnerController.muzzles	射出口	Emitters
 GunnerController.section.hit	当たり判定	Hit detection
 GunnerController.section.shot	射撃	Shooting
 GunnerController.section.bone	ボーン連動	Bone link
 GunnerController.about	指定した位置から弾やパーティクルを撃ち出す部品。	Shoots bullets or particles from the set positions.
 GunnerController.emitters.numberNote	並べ替え・外すと射出口の番号が変わるので、「Animator にそろえる」を押し直し、GunnerHandController の useEmitters と GunnerAutoAim の emitterSwitches・firePayloads も直す	Reordering or removing emitters changes their numbers, so press Sync Animator again and update useEmitters on GunnerHandController and emitterSwitches and firePayloads on GunnerAutoAim
-GunnerController.emitters.multi	複数選択中は射出口を編集できません	Emitters cannot be edited while multiple objects are selected
+list.multi	複数選択中は一覧を編集できません	Lists cannot be edited while multiple objects are selected
 GunnerEmitter.about	射出口1つの設定。GunnerController の射出口の一覧に入れて使う。	Settings for one emitter. Add it to a GunnerController's emitter list.
 GunnerEmitter.owner	射出口 {0}(GunnerController: {1})	Emitter {0} (GunnerController: {1})
 GunnerEmitter.pivot	Target Rotation Transform	Target Rotation Transform

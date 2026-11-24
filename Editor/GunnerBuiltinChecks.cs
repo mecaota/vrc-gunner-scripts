@@ -124,9 +124,9 @@ namespace Mecaota.Gunner.EditorTools
             foreach (var m in muzzles)
             {
                 var tip = GunnerEmitterEditor.Tip(m);
-                for (int k = 0; k < m.linkBones.Length - 1; k++)
+                for (int k = 2; k < m.turns.Length; k++)
                 {
-                    var bone = m.linkBones[k];
+                    var bone = m.turns[k];
                     if (bone == null || bone == tip || !tip.IsChildOf(bone)) continue;
                     if (tips.Contains(bone) || (chainOf.TryGetValue(bone, out var other) && other != tip))
                     {
@@ -158,14 +158,14 @@ namespace Mecaota.Gunner.EditorTools
                 if (parent != null) fix = () => GunnerEditorUtil.Edit(parent, so => GunnerEditorUtil.Append(so.FindProperty("muzzles"), m));
                 into.Add(new GunnerCheck(E.Warning, "check.emitter.unlisted", m, fix));
             }
-            if (m.pivot == null)
-                into.Add(new GunnerCheck(E.Error, "check.emitter.no_pivot", m,
-                    () => GunnerEditorUtil.Edit(m, so => so.FindProperty("pivot").objectReferenceValue = m.transform)));
+            Transform aim = GunnerEmitterEditor.Aim(m);
+            if (aim == null)
+                into.Add(new GunnerCheck(E.Error, "check.emitter.no_pivot", m, () => GunnerEditorUtil.Edit(m, so => FixTurns(m, so))));
 
             var ps = m.shotParticle;
             if (ps == null)
             {
-                Transform at = m.pivot != null ? m.pivot : m.transform;
+                Transform at = aim != null ? aim : m.transform;
                 into.Add(new GunnerCheck(E.Warning, "check.rig.no_particle", m, () =>
                 {
                     var created = GunnerEditorUtil.CreateShotParticles(at);
@@ -187,13 +187,13 @@ namespace Mecaota.Gunner.EditorTools
 
             // 連動する射出口の狙える角度は、およそ 170 度まで(180 度の真後ろでは回す軸が決まらず、ボーンが跳ぶ)。
             const float LinkMax = 170f;
-            float angle = m.aimMaxAngle;
+            float angle = GunnerEmitterEditor.AimLimit(m);
             if (angle > 180f)
                 into.Add(new GunnerCheck(E.Warning, "check.rig.angle_over", m,
-                    () => GunnerEditorUtil.Edit(m, so => so.FindProperty("aimMaxAngle").floatValue = 180f), angle.ToString("0.#")));
+                    () => GunnerEditorUtil.Edit(m, so => so.FindProperty("turnLimits").GetArrayElementAtIndex(0).floatValue = 180f), angle.ToString("0.#")));
             else if (angle > LinkMax)
                 into.Add(new GunnerCheck(E.Warning, "check.rig.angle_link", m,
-                    () => GunnerEditorUtil.Edit(m, so => so.FindProperty("aimMaxAngle").floatValue = LinkMax), angle.ToString("0.#")));
+                    () => GunnerEditorUtil.Edit(m, so => so.FindProperty("turnLimits").GetArrayElementAtIndex(0).floatValue = LinkMax), angle.ToString("0.#")));
 
             var clip = m.preFireClip;
             if (clip != null && rig != null && rig.fireAnimator != null && !AnimationUtility.GetAnimationEvents(clip).Any(e => e.functionName == "SendCustomEvent" && e.stringParameter == nameof(GunnerController._AnimFire)))
@@ -205,24 +205,53 @@ namespace Mecaota.Gunner.EditorTools
         // 実行時は、赤のボーンを無視して残りで鎖を作る。
         static void LinkBones(GunnerEmitter m, List<GunnerCheck> into)
         {
-            var bones = m.linkBones ?? new Transform[0];
-            if (bones.Contains(null))
-                into.Add(new GunnerCheck(E.Warning, "check.rig.extra_null", m,
-                    () => GunnerEditorUtil.Edit(m, so => GunnerEditorUtil.RemoveNulls(so, "linkBones"))));
+            var bones = m.turns ?? new Transform[0];
+            if (bones.Skip(1).Contains(null))
+                into.Add(new GunnerCheck(E.Warning, "check.rig.extra_null", m, () => GunnerEditorUtil.Edit(m, so =>
+                {
+                    for (int k = bones.Length - 1; k >= 1; k--) if (bones[k] == null) RemoveRow(so, k);
+                })));
             var tip = GunnerEmitterEditor.Tip(m);
             if (tip == null) return;
             var seen = new HashSet<Transform>();
-            for (int k = 0; k < bones.Length - 1; k++)
+            for (int k = 2; k < bones.Length; k++)
             {
                 var bone = bones[k];
                 if (bone == null) continue;
                 int index = k;
-                System.Action remove = () => GunnerEditorUtil.Edit(m, so => GunnerEditorUtil.RemoveAt(so.FindProperty("linkBones"), index));
-                string label = k + " (" + bone.name + ")";
+                System.Action remove = () => GunnerEditorUtil.Edit(m, so => RemoveRow(so, index));
+                string label = (k + 1) + " (" + bone.name + ")";
                 if (!seen.Add(bone) || bone == tip)
                     into.Add(new GunnerCheck(E.Error, "check.rig.extra_duplicate", m, remove, label));
                 else if (!tip.IsChildOf(bone))
                     into.Add(new GunnerCheck(E.Error, "check.rig.extra_not_ancestor", m, remove, label));
+            }
+        }
+
+        static void RemoveRow(SerializedObject so, int row)
+        {
+            var limits = so.FindProperty("turnLimits");
+            if (row < limits.arraySize) GunnerEditorUtil.RemoveAt(limits, row);
+            GunnerEditorUtil.RemoveAt(so.FindProperty("turns"), row);
+        }
+
+        // 古い欄(pivot・linkBones・aimMaxAngle・boneYawMax)があれば一覧へ移す。無ければ 1 行目に射出口自身を入れる。
+        static void FixTurns(GunnerEmitter m, SerializedObject so)
+        {
+            var turns = so.FindProperty("turns");
+            var limits = so.FindProperty("turnLimits");
+            var bones = m.pivot != null && m.linkBones != null ? m.linkBones : new Transform[0];
+            if (m.pivot != null || turns.arraySize == 0)
+            {
+                turns.arraySize = limits.arraySize = bones.Length + 1;
+                limits.GetArrayElementAtIndex(0).floatValue = m.aimMaxAngle > 0f ? m.aimMaxAngle : 60f;
+            }
+            turns.GetArrayElementAtIndex(0).objectReferenceValue = m.pivot != null ? m.pivot : m.transform;
+            so.FindProperty("pivot").objectReferenceValue = null;
+            for (int k = 0; k < bones.Length; k++)
+            {
+                turns.GetArrayElementAtIndex(k + 1).objectReferenceValue = bones[bones.Length - 1 - k];
+                limits.GetArrayElementAtIndex(k + 1).floatValue = m.boneYawMax > 0f ? m.boneYawMax : 30f;
             }
         }
 

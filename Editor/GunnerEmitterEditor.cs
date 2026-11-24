@@ -28,7 +28,7 @@ namespace Mecaota.Gunner.EditorTools
             if (targets.Length == 1 && rig != null)
                 EditorGUILayout.LabelField(string.Format(T("GunnerEmitter.owner"), index, rig.name), EditorStyles.wordWrappedMiniLabel);
 
-            Field("pivot");
+            ListField("turns", (e, i) => new GUIContent(i == 0 ? T("GunnerEmitter.turns.aim") : (i + 1).ToString()), int.MaxValue, "turnLimits", 60f);
             Field("shotParticle");
             Field("fireMode");
 
@@ -41,9 +41,6 @@ namespace Mecaota.Gunner.EditorTools
             Heading("GunnerEmitter.card.stream");
             Fields("streamRate", "streamHitMode", "streamHitInterval", "streamCollide");
 
-            Heading("GunnerEmitter.card.aim");
-            Field("aimMaxAngle");
-            DrawBones(muzzle);
             DrawFollow(muzzle);
         }
 
@@ -58,30 +55,13 @@ namespace Mecaota.Gunner.EditorTools
             EditorGUILayout.LabelField(T(key), EditorStyles.boldLabel);
         }
 
-        // 親のボーンは根元側に足す。
-        void DrawBones(GunnerEmitter muzzle)
-        {
-            var bones = Field("linkBones");
-            if (targets.Length > 1) return;
-            var list = muzzle.linkBones ?? new Transform[0];
-            Transform next = list.Length > 0 && list[0] != null ? list[0].parent : null;
-            using (new EditorGUI.DisabledScope(next == null))
-            {
-                if (GUILayout.Button(T("GunnerEmitter.bones.add")))
-                {
-                    bones.InsertArrayElementAtIndex(0);
-                    bones.GetArrayElementAtIndex(0).objectReferenceValue = next;
-                }
-            }
-        }
-
         void DrawFollow(GunnerEmitter muzzle)
         {
             if (Tip(muzzle) == null) return;
             var fold = serializedObject.FindProperty("boneStrength");
             fold.isExpanded = EditorGUILayout.Foldout(fold.isExpanded, T("GunnerEmitter.card.follow"), true);
             if (!fold.isExpanded) return;
-            Fields("boneStrength", "boneYawMax", "bonePitchUpMax", "bonePitchDownMax", "boneSmooth", "boneMinSpeed", "boneMaxSpeed");
+            Fields("boneStrength", "boneSmooth", "boneMinSpeed", "boneMaxSpeed");
         }
 
         void Reload()
@@ -106,23 +86,21 @@ namespace Mecaota.Gunner.EditorTools
             return null;
         }
 
-        /// <summary>連動の先端のボーン(linkBones の最後)。連動しない射出口は null。</summary>
-        internal static Transform Tip(GunnerEmitter muzzle)
-        {
-            var list = muzzle != null ? muzzle.linkBones : null;
-            return list != null && list.Length > 0 ? list[list.Length - 1] : null;
-        }
+        /// <summary>一覧の 1 行目(射出の向き)。無ければ null。</summary>
+        internal static Transform Aim(GunnerEmitter muzzle) => muzzle != null && muzzle.turns != null && muzzle.turns.Length > 0 ? muzzle.turns[0] : null;
 
-        // rig の AimLimit と同じ決まり。
-        internal static float AimLimit(GunnerEmitter muzzle) => muzzle.aimMaxAngle > 0f ? muzzle.aimMaxAngle : GunnerController.DefaultAimLimit;
+        /// <summary>連動の先端のボーン(一覧の 2 行目)。連動しない射出口は null。</summary>
+        internal static Transform Tip(GunnerEmitter muzzle) => muzzle != null && muzzle.turns != null && muzzle.turns.Length > 1 ? muzzle.turns[1] : null;
+
+        internal static float AimLimit(GunnerEmitter muzzle) => muzzle.turnLimits != null && muzzle.turnLimits.Length > 0 ? muzzle.turnLimits[0] : 0f;
 
         void OnSceneGUI()
         {
             var muzzle = (GunnerEmitter)target;
             RigOf(muzzle, out int index);
             DrawHandles(muzzle, index);
-            if (muzzle.pivot == null || Event.current.type != EventType.Repaint) return;
-            var em = muzzle.pivot;
+            var em = Aim(muzzle);
+            if (em == null || Event.current.type != EventType.Repaint) return;
             Handles.color = RangeLine;
             // 移動ハンドルの Z 軸と重ならないよう、それより長くする。
             Handles.ArrowHandleCap(0, em.position, em.rotation, HandleUtility.GetHandleSize(em.position) * 2f, EventType.Repaint);
@@ -131,8 +109,8 @@ namespace Mecaota.Gunner.EditorTools
         /// <summary>射出口自身が Target Rotation Transform なら、Unity のハンドルとぶつかるので姿勢のハンドルを出さない。</summary>
         private static void DrawHandles(GunnerEmitter muzzle, int index)
         {
-            if (muzzle == null || muzzle.pivot == null) return;
-            var em = muzzle.pivot;
+            var em = Aim(muzzle);
+            if (em == null) return;
             Vector3 pos = em.position;
             Vector3 fwd = em.forward;
             Vector3 up = em.up;
@@ -197,7 +175,7 @@ namespace Mecaota.Gunner.EditorTools
                 if (flat.sqrMagnitude > 1e-8f)
                 {
                     float nextAngle = Mathf.Round(Mathf.Clamp(Vector3.Angle(fwd, flat), 1f, 180f));
-                    GunnerEditorUtil.Edit(muzzle, so => so.FindProperty("aimMaxAngle").floatValue = nextAngle);
+                    GunnerEditorUtil.Edit(muzzle, so => so.FindProperty("turnLimits").GetArrayElementAtIndex(0).floatValue = nextAngle);
                 }
             }
         }

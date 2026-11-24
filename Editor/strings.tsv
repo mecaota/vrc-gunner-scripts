@@ -25,7 +25,7 @@ check.rig.chain_long	連動するボーンが6本を超えています: {0}	More
 check.rig.impact_in_rig	着弾音の音源 {0} が rig の配下にあります。当たった点へ動かす音源が rig につられて動いたり、rig の一部を動かしたりするので、rig の外に置いてください	Impact sound source {0} is under the rig. It would follow the rig, or move part of the rig when moved to the hit point, so place it outside the rig
 check.rig.angle_over	狙える角度が180度を超えています: {0}	Aim limit is over 180 degrees: {0}
 check.rig.angle_link	狙える角度が170度を超えています。真後ろ近くでボーンが跳ぶことがあるので、連動する射出口は170度までにしてください: {0}	Aim limit over 170 degrees. Bones can jump near straight back, so keep linked emitters at 170 degrees or less: {0}
-check.emitter.no_pivot	Target Rotation Transform がありません	No Target Rotation Transform set
+check.emitter.no_pivot	Target Rotation Transform の 1 行目(射出の向き)が空です	The first row (aim) of Target Rotation Transform is empty
 check.emitter.unlisted	どの GunnerController の射出口の一覧にも入っていません	Not in any GunnerController's emitter list
 check.emitter.no_anim_fire	撃つ前のクリップ {0} に Animation Event(SendCustomEvent、_AnimFire)がないため、撃てません	Pre-fire clip {0} has no Animation Event (SendCustomEvent, _AnimFire), so it never shoots
 check.rig.animator_unsynced	Animator のレイヤーやパラメーターが、射出口のクリップと合っていません。「Animator にそろえる」を押してください	The Animator's layers or parameters do not match the emitters' clips. Press Sync Animator
@@ -51,18 +51,17 @@ GunnerController.emitters.numberNote	並べ替え・外すと射出口の番号�
 list.multi	複数選択中は一覧を編集できません	Lists cannot be edited while multiple objects are selected
 GunnerEmitter.about	射出口1つの設定。GunnerController の射出口の一覧に入れて使う。	Settings for one emitter. Add it to a GunnerController's emitter list.
 GunnerEmitter.owner	射出口 {0}(GunnerController: {1})	Emitter {0} (GunnerController: {1})
-GunnerEmitter.pivot	Target Rotation Transform	Target Rotation Transform
-GunnerEmitter.pivot.tip	狙いで回し、弾を出す Transform。+Z が撃つ向きの初期値	The Transform the aim turns and shots leave from. +Z is the rest direction
-GunnerEmitter.linkBones	連動ボーン(根元 → 先端)	Linked bones (root → tip)
-GunnerEmitter.linkBones.tip	狙いで回すボーン。最後が先端で、ほかは先端の祖先に限る。狙いの角度をボーンの数で等分して回す。空なら連動しない	Bones the aim turns. The last one is the tip; the others must be its ancestors. The aim angle is split evenly across the bones. Empty = no link
+GunnerEmitter.turns	Target Rotation Transform	Target Rotation Transform
+GunnerEmitter.turns.tip	狙いで回す Transform。1 行目は弾を出す射出の向きで、+Z が撃つ向きの初期値。2 行目からは連動するボーン(先端 → 根元)で、3 行目からは先端の祖先に限る。ボーンには狙いの角度を等分して回す	Transforms the aim turns. Row 1 is the aim the shots leave from; +Z is the rest direction. From row 2 are the linked bones (tip → root); from row 3 they must be ancestors of the tip. The aim angle is split evenly across the bones
+GunnerEmitter.turns.aim	射出の向き	Aim
+GunnerEmitter.turnLimits	可動域	Limit
+GunnerEmitter.turnLimits.tip	回せる角度の上限(度)。1 行目は射出口が狙える角度で、撃つ向きの初期値から測る。ボーンの行は 1 本あたりの上限で、鎖全体ではこの値 × ボーンの数まで曲がる。0 なら回さない	Turn limit in degrees. Row 1 is how far the emitter can aim from the rest direction. A bone row is the limit per bone; the whole chain can turn this value × the number of bones. 0 = no turn
 GunnerEmitter.card.fire	発射	Fire
 GunnerEmitter.card.impact	着弾	Impact
 GunnerEmitter.card.stream	連射	Stream
-GunnerEmitter.card.aim	向き	Aim
 GunnerEmitter.card.follow	ボーン連動の設定	Bone link settings
 GunnerEmitter.shotParticle	パーティクル	Particles
 GunnerEmitter.shotParticle.tip	撃つときに出すパーティクル。Simulation Space は World にする。弾が当たるレイヤーは、このパーティクルの Collision > Collides With で決める(Collision を切っていても、この値は使う)	Particles shot from the emitter. Set Simulation Space to World. Shots hit the layers in this particle system's Collision > Collides With (used even when Collision is off)
-GunnerEmitter.bones.add	+ 親のボーンを足す	+ Add parent bone
 GunnerController.movers	動く物	Moving objects
 GunnerController.movers.tip	当たった跡がこの物に付いて動く	Hits on these follow them
 GunnerController.receivers	受け手	Receivers
@@ -88,8 +87,6 @@ GunnerEmitter.castRadius	弾の半径(m)	Shot radius (m)
 GunnerEmitter.castRadius.tip	当たり判定の太さ(メートル)	Hit test thickness (metres)
 GunnerController.playerRadius	体の太さ	Body radius
 GunnerController.playerRadius.tip	目の高さに対する割合	Share of the eye height
-GunnerEmitter.aimMaxAngle	可動域(度、0 = 60)	Aim limit (°, 0 = 60)
-GunnerEmitter.aimMaxAngle.tip	この射出口が狙える角度の上限(度)。撃つ向きの初期値から測る。0 なら 60 度	Aim limit for this emitter (degrees), measured from the rest direction. 0 = 60 degrees
 GunnerEmitter.streamRate	連射の量(個/秒)	Stream rate (/s)
 GunnerEmitter.streamRate.tip	1秒あたりのパーティクルの数	Particles per second
 GunnerEmitter.streamHitMode	連射の当たり方	Stream hits
@@ -103,12 +100,6 @@ GunnerController.boneFollow	最初から連動する	Linked at start
 GunnerController.boneFollow.tip	開始時に、狙いに合わせてボーンを回すかどうか。実行中は BoneFollowOn / BoneFollowOff で切り替える	Whether the bones turn with the aim at start. Switch at runtime with BoneFollowOn / BoneFollowOff
 GunnerEmitter.boneStrength	連動の割合(0〜1)	Link share (0-1)
 GunnerEmitter.boneStrength.tip	狙いの角度のうち、ボーンが受け持つ割合(0〜1)。残りは射出口だけが向く	Share of the aim angle the bones take (0-1). The emitter turns the rest by itself
-GunnerEmitter.boneYawMax	左右の上限(度)	Yaw limit (°)
-GunnerEmitter.boneYawMax.tip	ボーン1本が左右に曲がる角度の上限(度)。連動ボーンが複数あれば、全体でこの値 × ボーンの数まで曲がる	Yaw limit of one bone (degrees). With several linked bones, the whole chain can turn as far as this value × the number of bones
-GunnerEmitter.bonePitchUpMax	上の上限(度)	Pitch up limit (°)
-GunnerEmitter.bonePitchUpMax.tip	ボーン1本が上に曲がる角度の上限(度)。連動ボーンが複数あれば、全体でこの値 × ボーンの数まで曲がる	Pitch-up limit of one bone (degrees). With several linked bones, the whole chain can turn as far as this value × the number of bones
-GunnerEmitter.bonePitchDownMax	下の上限(度)	Pitch down limit (°)
-GunnerEmitter.bonePitchDownMax.tip	ボーン1本が下に曲がる角度の上限(度)。連動ボーンが複数あれば、全体でこの値 × ボーンの数まで曲がる	Pitch-down limit of one bone (degrees). With several linked bones, the whole chain can turn as far as this value × the number of bones
 GunnerEmitter.boneSmooth	追いつく速さ(/秒)	Catch-up rate (/s)
 GunnerEmitter.boneSmooth.tip	毎秒、残りの角度をどれだけ詰めるか。大きいほど早く追いつき、小さいほどなめらか	Per second, share of the remaining angle closed. Higher catches up faster, lower is smoother
 GunnerEmitter.boneMinSpeed	最低の速さ(度/秒)	Minimum speed (°/s)

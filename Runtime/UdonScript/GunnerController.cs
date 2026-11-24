@@ -24,7 +24,6 @@ namespace Mecaota.Gunner
         public const int AimNone = 0;
         public const int AimTarget = 2;      // 1 と 3 は空き番(旧 AimDirection、AimAngles)。同期する値なので番号は詰めない
         public const int MaxEmitters = 16;
-        public const float DefaultAimLimit = 60f;
 
         /// <summary>
         /// 同期する記録の輪の長さ。どのビルドでも同じ(PC と Android で合っていないと、輪の読み方が
@@ -96,14 +95,11 @@ namespace Mecaota.Gunner
         // 毎フレーム読む値を、ほかの Behaviour の欄の読み出しにしないため、配列に写して使う。
         [System.NonSerialized] public Transform[] emitters;         // GunnerAutoAim も読む
         private ParticleSystem[] shotParticles;
-        private Transform[][] linkBones;
+        private Transform[][] turns;
+        private float[][] turnLimits;
         private int[] fireModes;
-        private float[] aimMaxAngles;
         // 連動ごとに、ボーンをつかんだ時の先頭の射出口(linkLead)の値を使う。
         private float[] boneStrengths;
-        private float[] boneYawMaxes;
-        private float[] bonePitchUpMaxes;
-        private float[] bonePitchDownMaxes;
         private float[] boneSmooths;
         private float[] boneMinSpeeds;
         // 0 より大きい時は、速さをこの上限で切り、速さの変わり方も BoneRampTime 秒で 0 から上限に届く割合までにする。
@@ -261,8 +257,6 @@ namespace Mecaota.Gunner
         // 連動ごと: boneMaxSpeeds を使う時の追従の速度(2つの値の1秒あたりの変化)。
         private float[] followVelYaw;
         private float[] followVelPitch;
-        private float[] turnYaw;
-        private float[] turnPitch;
         private bool aimedOnce;         // 射出口が回されていて、休みへ1回戻す必要がある
 
         private int[] probeBones = { 0, 7, 8, 54, 9, 10, 13, 15, 17, 14, 16, 18, 1, 3, 5, 2, 4, 6 };
@@ -386,13 +380,10 @@ namespace Mecaota.Gunner
             int n = emitterCount;
             emitters = new Transform[n];
             shotParticles = new ParticleSystem[n];
-            linkBones = new Transform[n][];
+            turns = new Transform[n][];
+            turnLimits = new float[n][];
             fireModes = new int[n];
-            aimMaxAngles = new float[n];
             boneStrengths = new float[n];
-            boneYawMaxes = new float[n];
-            bonePitchUpMaxes = new float[n];
-            bonePitchDownMaxes = new float[n];
             boneSmooths = new float[n];
             boneMinSpeeds = new float[n];
             boneMaxSpeeds = new float[n];
@@ -414,17 +405,15 @@ namespace Mecaota.Gunner
             for (int i = 0; i < n; i++)
             {
                 GunnerEmitter m = muzzles[i];
-                linkBones[i] = new Transform[0];
+                turns[i] = new Transform[0];
+                turnLimits[i] = new float[0];
                 if (m == null) continue;
-                emitters[i] = m.pivot;
+                if (m.turns != null) turns[i] = m.turns;
+                if (m.turnLimits != null) turnLimits[i] = m.turnLimits;
+                if (turns[i].Length > 0) emitters[i] = turns[i][0];
                 shotParticles[i] = m.shotParticle;
-                if (m.linkBones != null) linkBones[i] = m.linkBones;
                 fireModes[i] = m.fireMode;
-                aimMaxAngles[i] = m.aimMaxAngle;
                 boneStrengths[i] = m.boneStrength;
-                boneYawMaxes[i] = m.boneYawMax;
-                bonePitchUpMaxes[i] = m.bonePitchUpMax;
-                bonePitchDownMaxes[i] = m.bonePitchDownMax;
                 boneSmooths[i] = m.boneSmooth;
                 boneMinSpeeds[i] = m.boneMinSpeed;
                 boneMaxSpeeds[i] = m.boneMaxSpeed;
@@ -482,8 +471,7 @@ namespace Mecaota.Gunner
                 restRel[i] = Quaternion.identity;
                 Transform m = emitters[i];
                 if (m == null) continue;
-                Transform[] list = linkBones[i];
-                Transform bone = list.Length > 0 ? list[list.Length - 1] : null;
+                Transform bone = turns[i].Length > 1 ? turns[i][1] : null;
                 if (bone == null)
                 {
                     restRef[i] = m.parent;
@@ -511,8 +499,6 @@ namespace Mecaota.Gunner
             followPitch = new float[count];
             followVelYaw = new float[count];
             followVelPitch = new float[count];
-            turnYaw = new float[count];
-            turnPitch = new float[count];
             for (int b = 0; b < count; b++)
             {
                 links[b] = found[b];
@@ -526,7 +512,7 @@ namespace Mecaota.Gunner
         private void BuildChains(int count)
         {
             int extraCount = 0;
-            for (int e = 0; e < emitterCount; e++) extraCount += linkBones[e].Length;
+            for (int e = 0; e < emitterCount; e++) extraCount += turns[e].Length;
             linkChainStart = new int[count];
             linkChainCount = new int[count];
             linkPathStart = new int[count];
@@ -630,8 +616,8 @@ namespace Mecaota.Gunner
             for (int e = 0; e < emitterCount; e++)
             {
                 if (linkOf[e] != b) continue;
-                Transform[] list = linkBones[e];
-                for (int k = 0; k < list.Length - 1; k++) if (list[k] == t) return true;
+                Transform[] list = turns[e];
+                for (int k = 2; k < list.Length; k++) if (list[k] == t) return true;
             }
             return false;
         }
@@ -659,8 +645,6 @@ namespace Mecaota.Gunner
                 followPitch[b] = 0f;
                 followVelYaw[b] = 0f;
                 followVelPitch[b] = 0f;
-                turnYaw[b] = 0f;
-                turnPitch[b] = 0f;
                 if (!linkHeld[b]) continue;
                 linkHeld[b] = false;
                 RestoreChain(b);
@@ -1889,7 +1873,7 @@ namespace Mecaota.Gunner
                 }
                 int lead = linkLead[b];
                 int cn = 0;
-                for (int j = cs; j < ce; j++) if (Listed(lead, chainBone[j])) cn++;
+                for (int j = cs; j < ce; j++) if (Row(lead, chainBone[j]) > 0) cn++;
                 float ty = 0f;
                 float tp = 0f;
                 bool aimed = on && mode != AimNone && InAim(lead, emit) && ValidEmitter(lead) && Wish(mode, vec, lead);
@@ -1939,24 +1923,25 @@ namespace Mecaota.Gunner
                 {
                     RestoreChain(b);
                     linkHeld[b] = false;
-                    turnYaw[b] = 0f;
-                    turnPitch[b] = 0f;
                     continue;
                 }
                 float k = Mathf.Clamp01(Value(boneStrengths, lead, 1f));
-                float yawMax = Value(boneYawMaxes, lead, 30f) * cn;
-                turnYaw[b] = Mathf.Clamp(followYaw[b] * k, -yawMax, yawMax);
-                turnPitch[b] = Mathf.Clamp(followPitch[b] * k, -Value(bonePitchDownMaxes, lead, 15f) * cn, Value(bonePitchUpMaxes, lead, 30f) * cn);
-                // 鎖全体の回転を n 等分する(同じ軸で角度だけ 1/n)。n 回重ねると全体の回転になる。
-                // 狙える角度が 90 度を超える連動は、2つの値を軸と角度の回転にする(上限は今までどおり左右・上下とみなして切る)。
-                Quaternion q = wide ? AxisTurn(turnYaw[b], turnPitch[b]) : Quaternion.Euler(-turnPitch[b], turnYaw[b], 0f);
-                if (cn > 1) q = Quaternion.Slerp(Quaternion.identity, q, 1f / cn);
-                // 回転を先頭の射出口の休みの座標系で表し、各ボーンのローカル空間へ移す。どのボーンも同じ軸・同じ角度で曲がる。
-                // 先頭の射出口の linkBones に無いボーンは休みのまま。
+                float fy = followYaw[b] * k;
+                float fp = followPitch[b] * k;
+                float len = Mathf.Sqrt(fy * fy + fp * fp);
+                // 先頭の射出口の一覧に無いボーンは休みのまま。
                 for (int j = cs; j < ce; j++)
                 {
                     Transform cb = chainBone[j];
-                    if (cb == null || !Listed(lead, cb)) continue;
+                    int row = Row(lead, cb);
+                    if (row < 1) continue;
+                    // 鎖全体の回転を、その行の可動域 × 本数で切ってから n 等分する(同じ軸で角度だけ 1/n)。
+                    // 狙える角度が 90 度を超える連動は、2つの値を軸と角度の回転にする。
+                    float limit = Value(turnLimits[lead], row, 0f) * cn;
+                    float s = len > limit ? limit / len : 1f;
+                    Quaternion q = wide ? AxisTurn(fy * s, fp * s) : Quaternion.Euler(-fp * s, fy * s, 0f);
+                    if (cn > 1) q = Quaternion.Slerp(Quaternion.identity, q, 1f / cn);
+                    // 回転を先頭の射出口の休みの座標系で表し、ボーンのローカル空間へ移す。
                     Quaternion rel = chainRel[j] * restRel[lead];
                     cb.localRotation = chainBase[j] * rel * q * Quaternion.Inverse(rel);
                     chainWritten[j] = cb.localRotation;
@@ -2097,17 +2082,13 @@ namespace Mecaota.Gunner
             return Quaternion.AngleAxis(angle, new Vector3(-pitch / angle, yaw / angle, 0f));
         }
 
-        // 射出口 i の狙える角度: aimMaxAngles に 0 より大きい値があればそれ、無ければ DefaultAimLimit。
-        private float AimLimit(int i)
-        {
-            if (aimMaxAngles != null && i < aimMaxAngles.Length && aimMaxAngles[i] > 0f) return aimMaxAngles[i];
-            return DefaultAimLimit;
-        }
+        private float AimLimit(int i) { return Value(turnLimits[i], 0, 0f); }
 
         // 射出口 i が狙う組に入っているか(0 = 全部)。
         private bool InAim(int i, int mask) { return mask == 0 || (mask & (1 << i)) != 0; }
 
-        private bool Listed(int e, Transform t) { return t != null && ClaimIndex(t, linkBones[e], linkBones[e].Length) >= 0; }
+        // t が射出口 e の一覧の何行目か。-1 = 無い。
+        private int Row(int e, Transform t) { return t != null ? ClaimIndex(t, turns[e], turns[e].Length) : -1; }
 
         // 狙う組(0 = 全部)のうち、撃ち方が連射の射出口。
         private int StreamSet(int aim) { return (aim == 0 ? -1 : aim) & streamMask; }

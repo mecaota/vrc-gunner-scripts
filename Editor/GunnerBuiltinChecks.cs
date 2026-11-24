@@ -3,7 +3,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using VRC.SDK3.Components;
-using VRC.SDK3.Dynamics.Constraint.Components;
 using VRC.SDKBase;
 using E = Mecaota.Gunner.EditorTools.GunnerCheckLevel;
 
@@ -13,7 +12,7 @@ namespace Mecaota.Gunner.EditorTools
     [InitializeOnLoad]
     public sealed class GunnerBuiltinChecks : IGunnerCheckProvider
     {
-        const int ManyHits = GunnerRig.SyncSlots;
+        const int ManyHits = GunnerController.SyncSlots;
 
         static GunnerBuiltinChecks() => GunnerChecks.Register(new GunnerBuiltinChecks());
 
@@ -21,23 +20,22 @@ namespace Mecaota.Gunner.EditorTools
         {
             switch (c)
             {
-                case GunnerRig rig: Rig(rig, into); break;
+                case GunnerController rig: Rig(rig, into); break;
                 case GunnerEmitter muzzle: Emitter(muzzle, into); break;
                 case GunnerHandController hand: Hand(hand, into); break;
                 case GunnerPickupInput input: PickupInput(input, into); break;
-                case GunnerStream stream: Stream(stream, into); break;
             }
         }
 
         // ---------------- rig ----------------
 
-        static void Rig(GunnerRig rig, List<GunnerCheck> into)
+        static void Rig(GunnerController rig, List<GunnerCheck> into)
         {
             var muzzles = rig.muzzles ?? new GunnerEmitter[0];
             if (muzzles.Length == 0)
                 into.Add(new GunnerCheck(E.Error, "check.rig.no_emitter", rig));
-            if (muzzles.Length > GunnerRig.MaxEmitters)
-                into.Add(new GunnerCheck(E.Error, "check.rig.too_many_emitters", rig, null, GunnerRig.MaxEmitters.ToString()));
+            if (muzzles.Length > GunnerController.MaxEmitters)
+                into.Add(new GunnerCheck(E.Error, "check.rig.too_many_emitters", rig, null, GunnerController.MaxEmitters.ToString()));
             if (muzzles.Contains(null))
                 into.Add(new GunnerCheck(E.Error, "check.rig.null_emitter", rig,
                     () => GunnerEditorUtil.Edit(rig, so => GunnerEditorUtil.RemoveNulls(so, "muzzles"))));
@@ -46,9 +44,6 @@ namespace Mecaota.Gunner.EditorTools
             foreach (var source in muzzles.Where(m => m != null).Select(m => m.impactSource).Distinct())
                 if (source != null && source.transform.IsChildOf(rig.transform))
                     into.Add(new GunnerCheck(E.Warning, "check.rig.impact_in_rig", source, null, source.name));
-
-            if (StreamCount(rig, 0) > 0 && rig.stream == null)
-                into.Add(new GunnerCheck(E.Error, "check.rig.no_stream", rig, () => GunnerSetup.EnsureStream(rig)));
 
             if (rig.maxHits < 1)
                 into.Add(new GunnerCheck(E.Error, "check.rig.hits_zero", rig,
@@ -73,7 +68,7 @@ namespace Mecaota.Gunner.EditorTools
                     }
         }
 
-        static void Receivers(GunnerRig rig, List<GunnerCheck> into)
+        static void Receivers(GunnerController rig, List<GunnerCheck> into)
         {
             var listed = rig.receivers ?? new GunnerHitReceiver[0];
             bool hasNull = false;
@@ -94,7 +89,7 @@ namespace Mecaota.Gunner.EditorTools
         static Motion Real(Motion m) { return m != null ? m : null; }
 
         // 押した後に射出口やクリップを変えると、撃つ前のアニメが流れないか、別の射出口のアニメが流れる。
-        static void PreFireSynced(GunnerRig rig, GunnerEmitter[] muzzles, List<GunnerCheck> into)
+        static void PreFireSynced(GunnerController rig, GunnerEmitter[] muzzles, List<GunnerCheck> into)
         {
             var controller = GunnerAnimatorSync.ControllerOf(rig);
             if (controller == null) return;
@@ -120,7 +115,7 @@ namespace Mecaota.Gunner.EditorTools
         const int LongChain = 6;
 
         // 鎖は同じ先端のボーンを持つ射出口で共有する。別の鎖にも入っているボーンは、回転が二重に書かれる。
-        static void SharedBones(GunnerRig rig, List<GunnerCheck> into)
+        static void SharedBones(GunnerController rig, List<GunnerCheck> into)
         {
             var muzzles = (rig.muzzles ?? new GunnerEmitter[0]).Where(m => GunnerEmitterEditor.Tip(m) != null).ToList();
             var tips = new HashSet<Transform>(muzzles.Select(GunnerEmitterEditor.Tip));
@@ -129,9 +124,9 @@ namespace Mecaota.Gunner.EditorTools
             foreach (var m in muzzles)
             {
                 var tip = GunnerEmitterEditor.Tip(m);
-                for (int k = 0; k < m.linkBones.Length - 1; k++)
+                for (int k = 2; k < m.turns.Length; k++)
                 {
-                    var bone = m.linkBones[k];
+                    var bone = m.turns[k];
                     if (bone == null || bone == tip || !tip.IsChildOf(bone)) continue;
                     if (tips.Contains(bone) || (chainOf.TryGetValue(bone, out var other) && other != tip))
                     {
@@ -158,20 +153,19 @@ namespace Mecaota.Gunner.EditorTools
             var rig = GunnerEmitterEditor.RigOf(m, out _);
             if (rig == null)
             {
-                var parent = GunnerSetup.RigFor(m.gameObject);
+                var parent = m.GetComponentInParent<GunnerController>(true);
                 System.Action fix = null;
                 if (parent != null) fix = () => GunnerEditorUtil.Edit(parent, so => GunnerEditorUtil.Append(so.FindProperty("muzzles"), m));
                 into.Add(new GunnerCheck(E.Warning, "check.emitter.unlisted", m, fix));
             }
-            // Constraint の付いた Transform を pivot にすると、狙いが上書きされる。
-            if (m.pivot == null)
-                into.Add(new GunnerCheck(E.Error, "check.emitter.no_pivot", m, m.GetComponent<VRCParentConstraint>() != null ? null :
-                    (System.Action)(() => GunnerEditorUtil.Edit(m, so => so.FindProperty("pivot").objectReferenceValue = m.transform))));
+            Transform aim = GunnerEmitterEditor.Aim(m);
+            if (aim == null)
+                into.Add(new GunnerCheck(E.Error, "check.emitter.no_pivot", m, () => GunnerEditorUtil.Edit(m, so => FixTurns(m, so))));
 
             var ps = m.shotParticle;
             if (ps == null)
             {
-                Transform at = m.pivot != null ? m.pivot : m.transform;
+                Transform at = aim != null ? aim : m.transform;
                 into.Add(new GunnerCheck(E.Warning, "check.rig.no_particle", m, () =>
                 {
                     var created = GunnerEditorUtil.CreateShotParticles(at);
@@ -193,56 +187,40 @@ namespace Mecaota.Gunner.EditorTools
 
             // 連動する射出口の狙える角度は、およそ 170 度まで(180 度の真後ろでは回す軸が決まらず、ボーンが跳ぶ)。
             const float LinkMax = 170f;
-            float angle = m.aimMaxAngle;
+            float angle = GunnerEmitterEditor.AimLimit(m);
             if (angle > 180f)
                 into.Add(new GunnerCheck(E.Warning, "check.rig.angle_over", m,
-                    () => GunnerEditorUtil.Edit(m, so => so.FindProperty("aimMaxAngle").floatValue = 180f), angle.ToString("0.#")));
+                    () => GunnerEditorUtil.Edit(m, so => so.FindProperty("turnLimits").GetArrayElementAtIndex(0).floatValue = 180f), angle.ToString("0.#")));
             else if (angle > LinkMax)
                 into.Add(new GunnerCheck(E.Warning, "check.rig.angle_link", m,
-                    () => GunnerEditorUtil.Edit(m, so => so.FindProperty("aimMaxAngle").floatValue = LinkMax), angle.ToString("0.#")));
+                    () => GunnerEditorUtil.Edit(m, so => so.FindProperty("turnLimits").GetArrayElementAtIndex(0).floatValue = LinkMax), angle.ToString("0.#")));
 
             var clip = m.preFireClip;
-            if (clip != null && rig != null && rig.fireAnimator != null && !AnimationUtility.GetAnimationEvents(clip).Any(e => e.functionName == "SendCustomEvent" && e.stringParameter == nameof(GunnerRig._AnimFire)))
+            if (clip != null && rig != null && rig.fireAnimator != null && !AnimationUtility.GetAnimationEvents(clip).Any(e => e.functionName == "SendCustomEvent" && e.stringParameter == nameof(GunnerController._AnimFire)))
                 into.Add(new GunnerCheck(E.Warning, "check.emitter.no_anim_fire", m, null, clip.name));
 
             LinkBones(m, into);
-            Constraint(m, into);
-        }
-
-        // 先端のボーンの下にない射出口は、Parent Constraint が無いとボーンに付いて行かない。
-        static void Constraint(GunnerEmitter m, List<GunnerCheck> into)
-        {
-            var c = m.GetComponent<VRCParentConstraint>();
-            if (c == null)
-            {
-                var tip = GunnerEmitterEditor.Tip(m);
-                if (tip != null && m.pivot != null && !m.pivot.IsChildOf(tip))
-                    into.Add(new GunnerCheck(E.Warning, "check.emitter.no_constraint", m,
-                        m.pivot != m.transform ? () => GunnerSetup.Follow(m, tip) : (System.Action)null, tip.name));
-                return;
-            }
-            bool empty = c.Sources.Count == 0;
-            for (int i = 0; i < c.Sources.Count; i++) if (c.Sources[i].SourceTransform == null) empty = true;
-            if (empty) into.Add(new GunnerCheck(E.Warning, "check.emitter.constraint_no_source", c));
         }
 
         // 実行時は、赤のボーンを無視して残りで鎖を作る。
         static void LinkBones(GunnerEmitter m, List<GunnerCheck> into)
         {
-            var bones = m.linkBones ?? new Transform[0];
-            if (bones.Contains(null))
-                into.Add(new GunnerCheck(E.Warning, "check.rig.extra_null", m,
-                    () => GunnerEditorUtil.Edit(m, so => GunnerEditorUtil.RemoveNulls(so, "linkBones"))));
+            var bones = m.turns ?? new Transform[0];
+            if (bones.Skip(1).Contains(null))
+                into.Add(new GunnerCheck(E.Warning, "check.rig.extra_null", m, () => GunnerEditorUtil.Edit(m, so =>
+                {
+                    for (int k = bones.Length - 1; k >= 1; k--) if (bones[k] == null) RemoveRow(so, k);
+                })));
             var tip = GunnerEmitterEditor.Tip(m);
             if (tip == null) return;
             var seen = new HashSet<Transform>();
-            for (int k = 0; k < bones.Length - 1; k++)
+            for (int k = 2; k < bones.Length; k++)
             {
                 var bone = bones[k];
                 if (bone == null) continue;
                 int index = k;
-                System.Action remove = () => GunnerEditorUtil.Edit(m, so => GunnerEditorUtil.RemoveAt(so.FindProperty("linkBones"), index));
-                string label = k + " (" + bone.name + ")";
+                System.Action remove = () => GunnerEditorUtil.Edit(m, so => RemoveRow(so, index));
+                string label = (k + 1) + " (" + bone.name + ")";
                 if (!seen.Add(bone) || bone == tip)
                     into.Add(new GunnerCheck(E.Error, "check.rig.extra_duplicate", m, remove, label));
                 else if (!tip.IsChildOf(bone))
@@ -250,18 +228,45 @@ namespace Mecaota.Gunner.EditorTools
             }
         }
 
-        static bool IsStream(GunnerRig rig, int i) => rig.muzzles != null && i < rig.muzzles.Length && rig.muzzles[i] != null && rig.muzzles[i].fireMode == GunnerRig.FireStream;
+        static void RemoveRow(SerializedObject so, int row)
+        {
+            var limits = so.FindProperty("turnLimits");
+            if (row < limits.arraySize) GunnerEditorUtil.RemoveAt(limits, row);
+            GunnerEditorUtil.RemoveAt(so.FindProperty("turns"), row);
+        }
+
+        // 古い欄(pivot・linkBones・aimMaxAngle・boneYawMax)があれば一覧へ移す。無ければ 1 行目に射出口自身を入れる。
+        static void FixTurns(GunnerEmitter m, SerializedObject so)
+        {
+            var turns = so.FindProperty("turns");
+            var limits = so.FindProperty("turnLimits");
+            var bones = m.pivot != null && m.linkBones != null ? m.linkBones : new Transform[0];
+            if (m.pivot != null || turns.arraySize == 0)
+            {
+                turns.arraySize = limits.arraySize = bones.Length + 1;
+                limits.GetArrayElementAtIndex(0).floatValue = m.aimMaxAngle > 0f ? m.aimMaxAngle : 60f;
+            }
+            turns.GetArrayElementAtIndex(0).objectReferenceValue = m.pivot != null ? m.pivot : m.transform;
+            so.FindProperty("pivot").objectReferenceValue = null;
+            for (int k = 0; k < bones.Length; k++)
+            {
+                turns.GetArrayElementAtIndex(k + 1).objectReferenceValue = bones[bones.Length - 1 - k];
+                limits.GetArrayElementAtIndex(k + 1).floatValue = m.boneYawMax > 0f ? m.boneYawMax : 30f;
+            }
+        }
+
+        static bool IsStream(GunnerController rig, int i) => rig.muzzles != null && i < rig.muzzles.Length && rig.muzzles[i] != null && rig.muzzles[i].fireMode == GunnerController.FireStream;
 
         // mask: 数える射出口の組(0 = 全部)。
-        static int StreamCount(GunnerRig rig, int mask)
+        static int StreamCount(GunnerController rig, int mask)
         {
-            int count = rig.muzzles != null ? Mathf.Min(rig.muzzles.Length, GunnerRig.MaxEmitters) : 0;
+            int count = rig.muzzles != null ? Mathf.Min(rig.muzzles.Length, GunnerController.MaxEmitters) : 0;
             int n = 0;
             for (int i = 0; i < count; i++) if (IsStream(rig, i) && (mask == 0 || (mask & (1 << i)) != 0)) n++;
             return n;
         }
 
-        static void AddReceiver(GunnerRig rig, GunnerHitReceiver r)
+        static void AddReceiver(GunnerController rig, GunnerHitReceiver r)
         {
             GunnerEditorUtil.Edit(rig, so =>
             {
@@ -276,7 +281,7 @@ namespace Mecaota.Gunner.EditorTools
         {
             if (hand.rig == null)
             {
-                var rigs = GunnerEditorUtil.FindInScenes<GunnerRig>();
+                var rigs = GunnerEditorUtil.FindInScenes<GunnerController>();
                 System.Action fix = null;
                 if (rigs.Count == 1) fix = () => GunnerEditorUtil.Edit(hand, so => so.FindProperty("rig").objectReferenceValue = rigs[0]);
                 into.Add(new GunnerCheck(E.Error, "check.hand.no_rig", hand, fix));
@@ -307,8 +312,22 @@ namespace Mecaota.Gunner.EditorTools
                 {
                     int layer = ball.gameObject.layer;
                     into.Add(new GunnerCheck(E.Warning, "check.hand.mask_hits_ball", hand,
-                        () => GunnerSetup.ExcludeLayer(rig, layer), LayerMask.LayerToName(layer)));
+                        () => ExcludeLayer(rig, layer), LayerMask.LayerToName(layer)));
                 }
+            }
+        }
+
+        // 全部の射出口のパーティクルの Collision > Collides With から layer を外す。
+        static void ExcludeLayer(GunnerController rig, int layer)
+        {
+            foreach (var muzzle in rig.muzzles ?? new GunnerEmitter[0])
+            {
+                var ps = muzzle != null ? muzzle.shotParticle : null;
+                if (ps == null) continue;
+                Undo.RecordObject(ps, "Gunner: hit layers");
+                var collision = ps.collision;
+                collision.collidesWith = collision.collidesWith.value & ~(1 << layer);
+                EditorUtility.SetDirty(ps);
             }
         }
 
@@ -340,15 +359,6 @@ namespace Mecaota.Gunner.EditorTools
             if (input.GetComponent<VRCObjectSync>() == null)
                 into.Add(new GunnerCheck(E.Warning, "check.input.no_object_sync", input,
                     () => Undo.AddComponent<VRCObjectSync>(input.gameObject)));
-        }
-
-        // ---------------- 連射 ----------------
-
-        static void Stream(GunnerStream stream, List<GunnerCheck> into)
-        {
-            foreach (var rig in GunnerEditorUtil.FindInScenes<GunnerRig>())
-                if (rig.stream == stream) return;
-            into.Add(new GunnerCheck(E.Warning, "check.stream.unused", stream));
         }
     }
 }

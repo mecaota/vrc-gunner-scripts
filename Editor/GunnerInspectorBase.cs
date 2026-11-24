@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using UdonSharp;
 using UdonSharpEditor;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace Mecaota.Gunner.EditorTools
@@ -89,6 +91,66 @@ namespace Mecaota.Gunner.EditorTools
             return TypeName + "." + field;
         }
 
+        readonly Dictionary<string, ReorderableList> lists = new Dictionary<string, ReorderableList>();
+
+        /// <summary>
+        /// VRC Constraint の Sources の形の一覧(並べ替え・+/−・1 行)。side は main と同じ番号で動く並列配列で、行の右に描く。
+        /// 足した行は空にし、side には sideNew を入れる(Unity は前の行の値を写すため)。
+        /// </summary>
+        protected void ListField(string main, Func<SerializedProperty, int, GUIContent> rowLabel = null, int max = int.MaxValue, string side = null, float sideNew = 0f)
+        {
+            if (targets.Length > 1)
+            {
+                EditorGUILayout.HelpBox(T("list.multi"), MessageType.Info);
+                return;
+            }
+            if (!lists.TryGetValue(main, out var list))
+            {
+                const float SideWidth = 60f;
+                SerializedProperty Side() => side != null ? serializedObject.FindProperty(side) : null;
+                list = lists[main] = new ReorderableList(serializedObject, serializedObject.FindProperty(main), true, true, true, true)
+                {
+                    drawHeaderCallback = r =>
+                    {
+                        EditorGUI.LabelField(r, Label(KeyFor(main)));
+                        if (side != null) EditorGUI.LabelField(new Rect(r.xMax - SideWidth, r.y, SideWidth, r.height), Label(KeyFor(side)));
+                    },
+                    drawElementCallback = (r, i, active, focused) =>
+                    {
+                        r.y += 2f;
+                        r.height = EditorGUIUtility.singleLineHeight;
+                        var s = Side();
+                        if (s != null && i < s.arraySize)
+                        {
+                            EditorGUI.PropertyField(new Rect(r.xMax - SideWidth, r.y, SideWidth, r.height), s.GetArrayElementAtIndex(i), GUIContent.none);
+                            r.width -= SideWidth + 4f;
+                        }
+                        var e = list.serializedProperty.GetArrayElementAtIndex(i);
+                        EditorGUI.PropertyField(r, e, rowLabel != null ? rowLabel(e, i) : new GUIContent(i.ToString()));
+                    },
+                    onCanAddCallback = l => l.count < max,
+                    onAddCallback = l =>
+                    {
+                        GunnerEditorUtil.Append(l.serializedProperty, null);
+                        var s = Side();
+                        if (s == null) return;
+                        s.arraySize = l.count;
+                        s.GetArrayElementAtIndex(l.count - 1).floatValue = sideNew;
+                    },
+                    // 一覧から外すだけで、GameObject は消さない。
+                    onRemoveCallback = l =>
+                    {
+                        var s = Side();
+                        if (s != null && l.index < s.arraySize) GunnerEditorUtil.RemoveAt(s, l.index);
+                        GunnerEditorUtil.RemoveAt(l.serializedProperty, l.index);
+                        l.index = Mathf.Min(l.index, l.count - 1);
+                    },
+                    onReorderCallbackWithDetails = (l, from, to) => Side()?.MoveArrayElement(from, to),
+                };
+            }
+            list.DoLayoutList();
+        }
+
         protected GUIContent Label(string key)
         {
             if (!GunnerL10n.Has(key, GunnerL10n.Language)) missing.Add(key);
@@ -130,7 +192,4 @@ namespace Mecaota.Gunner.EditorTools
     // ほかのパッケージの受け手も、独自のエディタが無ければ同じ並びになる。
     [CustomEditor(typeof(GunnerHitReceiver), true), CanEditMultipleObjects]
     public class GunnerHitReceiverEditor : GunnerInspectorBase { }
-
-    [CustomEditor(typeof(GunnerStream)), CanEditMultipleObjects]
-    public class GunnerStreamEditor : GunnerInspectorBase { }
 }

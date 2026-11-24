@@ -6,6 +6,36 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+This version renames `GunnerRig` to `GunnerController` and merges `GunnerStream` into it, replaces the emitter's `pivot`, `linkBones` and limits with one list, and removes the `GameObject > Gunner` menus. Existing scenes need the steps below.
+
+この版では、`GunnerRig` を `GunnerController` に改名して `GunnerStream` をそこへ統合し、射出口の `pivot`・`linkBones`・可動域を 1 つの一覧にまとめ、`GameObject > Gunner` のメニューを削除しました。既存のシーンは、下の手順が要ります。
+
+### Breaking changes / 互換性のない変更
+
+- `GunnerRig` is renamed `GunnerController`. Scene references are kept. Scripts that use the type, including `GunnerHitReceiver` overrides such as `_OnHit(GunnerController rig)`, must use the new name.
+- `GunnerRig` を `GunnerController` に改名しました。シーンの参照は残ります。型を使っているスクリプトは、`_OnHit(GunnerController rig)` のような `GunnerHitReceiver` の override も含めて、新しい名前に直してください。
+- `GunnerStream` is merged into `GunnerController`; Stream emitters work without it. Remove the Missing Script and the empty Udon Behaviour left on the GameObject that had it. `GunnerStream.HitOnce` / `HitKeep` are now `GunnerController.HitOnce` / `HitKeep`.
+- `GunnerStream` を `GunnerController` に統合しました。この部品が無くても連射できます。部品のあった GameObject に残る Missing Script と、空の Udon Behaviour を外してください。`GunnerStream.HitOnce`・`HitKeep` は `GunnerController.HitOnce`・`HitKeep` になりました。
+- Removed from `GunnerController`: the `stream` field and the public methods `_KeepCast`, `_CastPath`, `_CastDistance`, `_StreamRate`, `_StreamHitMode`, `_StreamHitInterval` and `_StreamHit`. `shotParticles` and `flightOn` are no longer public.
+- `GunnerController` から、`stream` 欄と、公開メソッドの `_KeepCast`・`_CastPath`・`_CastDistance`・`_StreamRate`・`_StreamHitMode`・`_StreamHitInterval`・`_StreamHit` を削除しました。`shotParticles` と `flightOn` は public でなくなりました。
+- `GunnerEmitter`: `pivot`, `linkBones`, `aimMaxAngle` and the bone limits (`boneYawMax`, `bonePitchUpMax`, `bonePitchDownMax`) are replaced by one list, Target Rotation Transform (`turns`, with a limit per row in `turnLimits`). Row 1 is the aim; rows 2 and on are the linked bones, tip to root. To move the old values, open **Tools > Gunner > Check Window** and press **Fix** on "The first row (aim) of Target Rotation Transform is empty" for each emitter. The old fields stay hidden until the next breaking version. A bone row has one limit, taken from the old yaw limit; up and down are no longer separate.
+- `GunnerEmitter` の `pivot`・`linkBones`・`aimMaxAngle`・ボーンの上限(`boneYawMax`・`bonePitchUpMax`・`bonePitchDownMax`)を、Target Rotation Transform の一覧(`turns`。行ごとの可動域は `turnLimits`)1 つに置き換えました。1 行目が射出の向き、2 行目からが連動するボーン(先端 → 根元)です。古い値を移すには、**Tools > Gunner > Check Window** を開き、射出口ごとに「Target Rotation Transform の 1 行目(射出の向き)が空です」の「直す」を押してください。古い欄は隠れて残り、次に互換を切る版で消えます。ボーンの行の可動域は角度 1 つで、古い左右の上限の値が入ります。上下の区別は無くなりました。
+- A limit of 0 no longer means 60; it means the row does not turn. New rows start at 60, and **Fix** turns an old aim limit of 0 into 60.
+- 可動域の「0 なら 60」をやめました。0 は「回さない」です。新しい行の初期値は 60 で、移行の「直す」は古い可動域の 0 を 60 にします。
+- The `GameObject > Gunner` menus (Add Gunner Rig, Add Emitter, Add Emitter At Body Part) and the **+ Add parent bone** button are removed. Add the components by hand (see Quick start in README).
+- `GameObject > Gunner` のメニュー(Add Gunner Rig、Add Emitter、Add Emitter At Body Part)と「+ 親のボーンを足す」ボタンを削除しました。部品は手で付けます(README の Quick start を参照)。
+- Removed public editor API: `GunnerController.DefaultAimLimit`, the `GunnerSetup` static methods (`RigFor`, `AttachRig`, `AddEmitter`, `Muzzles`, `Follow`, `EnsureStream`, `Parts`, `ExcludeLayer`), and `GunnerEditorUtil.AddUdon` and `UniqueChildName`.
+- 公開していた API を削除しました: `GunnerController.DefaultAimLimit`、`GunnerSetup` の static メソッド(`RigFor`・`AttachRig`・`AddEmitter`・`Muzzles`・`Follow`・`EnsureStream`・`Parts`・`ExcludeLayer`)、`GunnerEditorUtil.AddUdon`・`UniqueChildName`。
+
+### Changed / 変更
+
+- To make an emitter follow a bone, add a VRC Position Constraint to the emitter's GameObject; the emitter can then be its own row 1. Existing VRC Parent Constraints still work. The checks and the inspector no longer look at VRC Parent Constraints.
+- 射出口をボーンに付けるときは、射出口の GameObject に VRC Position Constraint を付けます。射出口自身を 1 行目にできます。既存の VRC Parent Constraint のままでも動きます。点検とインスペクターは、VRC Parent Constraint を見なくなりました。
+- The Emitters, Receivers and Moving objects lists, and the Target Rotation Transform list, are now reorderable lists like the Sources of a VRC Constraint. The emitter list no longer has a foldout header or a count field. Lists cannot be edited while several objects are selected.
+- 「射出口」「受け手」「動く物」と Target Rotation Transform の一覧を、VRC Constraint の Sources のような並べ替えられる一覧にしました。射出口の一覧の折りたたみ見出しと個数の欄は無くなりました。複数選択中は、一覧を編集できません。
+- The `controller` field of `GunnerPickupInput` is now labelled Hand Controller.
+- `GunnerPickupInput` の `controller` 欄の表示名を Hand Controller にしました。
+
 ## [0.17.0] - 2026-11-24
 
 This version changes the type of `GunnerEmitter.streamCollide`, how emitters sharing a tip bone link their bones, and how the pre-fire clip plays. See Breaking below.

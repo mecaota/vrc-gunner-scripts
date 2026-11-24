@@ -15,7 +15,7 @@ namespace Mecaota.Gunner.EditorTools
         public const string ParamPrefix = "GunnerPre";
 
         /// <summary>fireAnimator の Controller。空か Override Controller なら null。</summary>
-        public static AnimatorController ControllerOf(GunnerRig rig) =>
+        public static AnimatorController ControllerOf(GunnerController rig) =>
             rig.fireAnimator != null ? rig.fireAnimator.runtimeAnimatorController as AnimatorController : null;
 
         // 同じ部位を動かす射出口でレイヤーを分けると、上のレイヤーの Rest が下の動きを打ち消すので、撃つ前のクリップごとに1枚にする。
@@ -23,15 +23,15 @@ namespace Mecaota.Gunner.EditorTools
             Enumerable.Range(0, muzzles.Length).Where(i => muzzles[i] != null && muzzles[i].preFireClip != null)
                 .GroupBy(i => muzzles[i].preFireClip).Select(g => g.ToArray()).ToList();
 
-        public static void Sync(GunnerRig rig)
+        public static void Sync(GunnerController rig)
         {
             var controller = ControllerOf(rig);
             if (controller == null)
             {
-                Debug.LogError(GunnerL10n.Tr("GunnerRig.syncAnimator.noController"), rig);
+                Debug.LogError(GunnerL10n.Tr("GunnerController.syncAnimator.noController"), rig);
                 return;
             }
-            string label = GunnerL10n.Tr("GunnerRig.syncAnimator");
+            string label = GunnerL10n.Tr("GunnerController.syncAnimator");
             Undo.IncrementCurrentGroup();
             Undo.SetCurrentGroupName(label);
             int undoGroup = Undo.GetCurrentGroup();

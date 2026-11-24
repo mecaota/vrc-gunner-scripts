@@ -1,5 +1,5 @@
 // GunnerRig 0.4.0 の鎖の式を、Unity なしの純計算で確かめる(System.Numerics の四元数。Unity と同じハミルトン積)。
-// 式は GunnerRig.cs の BuildChains / StepLinks / RestWorld をそのまま写したもの。
+// 式は GunnerController.cs の BuildChains / StepLinks / RestWorld をそのまま写したもの。
 using System;
 using System.Numerics;
 using System.Text;
@@ -53,11 +53,10 @@ namespace Mecaota.Gunner.Tests.Models
             var restW = World(baseLocal);
             Quaternion F = restW[3] * emitterLocal;              // 射出口の休みの座標系(emitter の親 = lead)
             Quaternion restRelLead = Inv(restW[3]) * restW[3] * emitterLocal; // = Inverse(bone.rotation) * parentRot * restLocal
-            // GunnerRig は chainRel を先端のボーン基準で持ち、使う時に restRel[lead] を掛ける。この式と同値。
+            // GunnerController は chainRel を先端のボーン基準で持ち、使う時に restRel[lead] を掛ける。この式と同値。
             var chainRel = new Quaternion[4];
             for (int i = 0; i < 4; i++) chainRel[i] = i == 3 ? restRelLead : Inv(restW[i]) * F;
             int n = 3;
-            float yawMax = 30, upMax = 25, downMax = 12;
 
             // 休みの座標系(RestWorld): 上の親から、鎖のボーンは休みの値、間のボーンは今の値
             Quaternion RestWorld(Quaternion[] cur)
@@ -66,13 +65,14 @@ namespace Mecaota.Gunner.Tests.Models
                 for (int i = 0; i < 4; i++) r = r * (inChain[i] ? baseLocal[i] : cur[i]);
                 return r * restRelLead;
             }
-            float Limit(float per, float chain, int cnt) { float t = per * cnt; if (chain > 0 && chain < t) t = chain; return t; }
-
-            void Case(float aimYaw, float aimPitch, float chainYaw, float expectTotal)
+            // 全部の行が同じ可動域 limit の鎖(行ごとに 可動域 × 本数 で、2つの値の長さを切る)
+            void Case(float aimYaw, float aimPitch, float limit, float expectTotal)
             {
                 // 追従の角度が狙いに追いついた状態(boneStrengths = 1)
-                float ty = Math.Max(-Limit(yawMax, chainYaw, n), Math.Min(Limit(yawMax, chainYaw, n), aimYaw));
-                float tp = Math.Max(-Limit(downMax, 0, n), Math.Min(Limit(upMax, 0, n), aimPitch));
+                float len = (float)Math.Sqrt(aimYaw * aimYaw + aimPitch * aimPitch);
+                float s = len > limit * n ? limit * n / len : 1f;
+                float ty = aimYaw * s;
+                float tp = aimPitch * s;
                 Quaternion Q = Euler(-tp, ty, 0);
                 Quaternion q = n > 1 ? SlerpFromIdentity(Q, 1f / n) : Q;
                 var cur = (Quaternion[])baseLocal.Clone();
@@ -92,22 +92,21 @@ namespace Mecaota.Gunner.Tests.Models
                 bool sumOk = Math.Abs(total - expectTotal) < 0.05f;
                 bool ok = same && sumOk && err < 0.5f && restDrift < 0.01f;
                 if (!ok) fails++;
-                sb.AppendLine($"狙い 左右{aimYaw,4} 上下{aimPitch,4} 合計上限{chainYaw,3}: ボーンの角度 {a0:F3} / {a1:F3} / {a3:F3}  合計 {total:F3}(期待 {expectTotal})  ボーンの先と狙い(上限後)の差 {err:F4}°  狙いとの差 {AngleBetween(boneFwd, wish):F3}°  休みの座標系のずれ {restDrift:F4}°  {(ok ? "OK" : "NG")}");
+                sb.AppendLine($"狙い 左右{aimYaw,4} 上下{aimPitch,4} 可動域{limit,3}:ボーンの角度 {a0:F3} / {a1:F3} / {a3:F3}  合計 {total:F3}(期待 {expectTotal})  ボーンの先と狙い(上限後)の差 {err:F4}°  狙いとの差 {AngleBetween(boneFwd, wish):F3}°  休みの座標系のずれ {restDrift:F4}°  {(ok ? "OK" : "NG")}");
             }
 
-            Case(0, 0, 0, 0);
-            Case(20, 0, 0, 20);
-            Case(40, 0, 0, 40);
-            Case(60, 0, 0, 60);
-            Case(-60, 0, 0, 60);
-            Case(0, 20, 0, 20);
+            Case(0, 0, 30, 0);
+            Case(20, 0, 30, 20);
+            Case(40, 0, 30, 40);
+            Case(60, 0, 30, 60);
+            Case(-60, 0, 30, 60);
+            Case(0, 20, 30, 20);
             // 上下と左右の組み合わせ: 合計は Euler(-p, y) の回転角
             float comb = AngleOf(Euler(-10, 40, 0));
-            Case(40, 10, 0, comb);
-            // 鎖の合計上限 45 度: 狙い 60 度でも合計 45 度で止まる
-            Case(60, 0, 45, 45);
-            // ボーン1本あたりの上限が効く(下向き 12 × 3 = 36 度)
-            Case(0, -50, 0, 36);
+            Case(40, 10, 30, comb);
+            // 1 本あたりの可動域が効く(15 × 3 = 45 度、下向き 12 × 3 = 36 度)
+            Case(60, 0, 15, 45);
+            Case(0, -50, 12, 36);
 
             // 戻す: 休みのローカル回転へ戻すと全部 0 度
             {

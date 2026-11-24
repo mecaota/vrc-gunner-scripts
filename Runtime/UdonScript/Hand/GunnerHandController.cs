@@ -11,7 +11,7 @@ namespace Mecaota.Gunner
     {
         public const int CollideAlways = 0, CollideAfterRelease = 1;
 
-        public GunnerRig rig;
+        public GunnerController rig;
         public GunnerPickupInput input;
         public GunnerMoveHold hold;               // 任意: 撃っている間もプレイヤーが歩ける
 

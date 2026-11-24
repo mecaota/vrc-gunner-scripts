@@ -1,5 +1,5 @@
-// 追従の回る速さの上限(GunnerRig.boneMaxSpeeds)を、動く相手で確かめる。射出口は原点で休みの向き +Z、相手の胸を狙う。
-// 追従の式は GunnerRig.StepLinks / StepFollowLimited の写し(なめらかさ 10、最低 30 度/秒、加速の上限 = 上限 / 0.25 秒)。
+// 追従の回る速さの上限(GunnerController.boneMaxSpeeds)を、動く相手で確かめる。射出口は原点で休みの向き +Z、相手の胸を狙う。
+// 追従の式は GunnerController.StepLinks / StepFollowLimited の写し(なめらかさ 10、最低 30 度/秒、加速の上限 = 上限 / 0.25 秒)。
 // 見るもの: 射出口の向きそのものの最大の回る速さ(度/秒)と最大の加速(度/秒²)、相手が止まった後に追いつくか、
 // 上限 0(既定)で今の式とビット単位で同じか。
 using System;
@@ -167,7 +167,7 @@ namespace Mecaota.Gunner.Tests.Models
                 sb.AppendLine($"{c.name}: 上限 {Limit} 度/秒 → 最大の速さ {on.maxSpeed:F0} 度/秒・最大の加速 {on.maxAccel:F0} 度/秒²・追いついて止まる {on.stops} 回(止まる直前の速さ 最大 {on.maxStop:F0} 度/秒)・止まってから追いつくまで {on.settle:F2} 秒 / 上限なし(今まで) → {off.maxSpeed:F0} 度/秒・{off.maxAccel:F0} 度/秒² {(ok ? "OK" : "NG")}");
             }
             // 上限 0 は今までの式とビット単位で同じ(StepFollowLimited を通らない。同じ相手で今の式を2回走らせて比べる意味は無いので、
-            // GunnerRig の分岐の写しが「上限 0 → 今の式」になっていることを、別に書いた今の式と比べる)
+            // GunnerController の分岐の写しが「上限 0 → 今の式」になっていることを、別に書いた今の式と比べる)
             {
                 int diff = 0;
                 var rnd = new Random(5);

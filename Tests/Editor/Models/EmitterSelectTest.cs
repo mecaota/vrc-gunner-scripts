@@ -1,5 +1,5 @@
 // GunnerRig 0.4.0 の射出口の選び方・射出口ごとの角度・狙う組・暴れ止めを、Unity なしの純計算で確かめる。
-// 式は GunnerRig.cs の _SolveWithin / _SolveFrom / _SolveNearest / Wish / AimLimit / _SetAimEmitters / StepLinks の
+// 式は GunnerController.cs の _SolveWithin / _SolveFrom / _SolveNearest / Wish / AimLimit / _SetAimEmitters / StepLinks の
 // 暴れ止め / SteadyUp をそのまま写したもの(Vector3.Angle は Unity と同じ式)。
 using System;
 using System.Collections.Generic;
@@ -26,7 +26,6 @@ namespace Mecaota.Gunner.Tests.Models
         {
             public Vector3[] pos;
             public Vector3[] rest;      // 休みの向き(ワールド、長さ1)
-            public const float DefaultAimLimit = 60f;
             public float[] aimMaxAngles;
             public float maxRange = 30f;
             public List<(Vector3 c, float r)> walls = new List<(Vector3, float)>();
@@ -48,11 +47,7 @@ namespace Mecaota.Gunner.Tests.Models
                 return false;
             }
 
-            public float AimLimit(int i)
-            {
-                if (aimMaxAngles != null && i < aimMaxAngles.Length && aimMaxAngles[i] > 0f) return aimMaxAngles[i];
-                return DefaultAimLimit;
-            }
+            public float AimLimit(int i) => aimMaxAngles[i];
 
             // 0.3.0 / 0.4.0 の元の _SolveFor(比べる相手)。limit は当時の rig の aimMaxAngle
             public int OldSolveFor(Vector3 point, float limit, out Vector3 dirOut)
@@ -158,7 +153,7 @@ namespace Mecaota.Gunner.Tests.Models
             var r = new Rig();
             r.pos = new[] { new Vector3(-0.55f, 0.30f, 0f), new Vector3(0.55f, 0.40f, 0f) };
             r.rest = new[] { Vector3.Normalize(new Vector3(-(float)Math.Cos(50 * Deg), -(float)Math.Sin(50 * Deg), 0f)), Vector3.UnitX };
-            if (perEmitter) r.aimMaxAngles = new[] { buttLimit, mouthLimit };
+            r.aimMaxAngles = perEmitter ? new[] { buttLimit, mouthLimit } : new[] { 60f, 60f };
             return r;
         }
 
@@ -174,7 +169,7 @@ namespace Mecaota.Gunner.Tests.Models
             var rnd = new Random(12345);
             Vector3 RandPoint() => new Vector3((float)(rnd.NextDouble() * 12 - 6), (float)(rnd.NextDouble() * 4 - 1), (float)(rnd.NextDouble() * 12 - 6));
 
-            // 1. 既定値: aimMaxAngles が空なら _SolveFor(= _SolveWithin(p, 0))は元の _SolveFor とビット単位で同じ
+            // 1. 既定値: 可動域が既定の 60 なら _SolveFor(= _SolveWithin(p, 0))は元の _SolveFor とビット単位で同じ
             {
                 var r = TwoEmitterRig(0, 0, false);
                 r.walls.Add((new Vector3(1.5f, 0.8f, 0.5f), 0.4f));
@@ -182,7 +177,7 @@ namespace Mecaota.Gunner.Tests.Models
                 for (int k = 0; k < 5000; k++)
                 {
                     var p = RandPoint();
-                    int a = r.OldSolveFor(p, Rig.DefaultAimLimit, out var da);
+                    int a = r.OldSolveFor(p, 60f, out var da);
                     int b = r.SolveWithin(p, 0f);
                     if (a != b || (a >= 0 && !da.Equals(r.solveDir))) diff++;
                 }
@@ -216,7 +211,7 @@ namespace Mecaota.Gunner.Tests.Models
                     // 休みの向き +Z から左右に aim 度
                     Vector3 rest = Vector3.UnitZ;
                     Vector3 w = new Vector3((float)Math.Sin(aim * Deg), 0, (float)Math.Cos(aim * Deg));
-                    float clampDefault = Math.Min(UAngle(rest, w), 60f);    // DefaultAimLimit 60
+                    float clampDefault = Math.Min(UAngle(rest, w), 60f);    // 既定 60
                     float clampWide = Math.Min(UAngle(rest, w), 100f);      // aimMaxAngles 100
                     float expDef = Math.Min(aim, 60f), expWide = aim;
                     if (Math.Abs(clampDefault - expDef) > 0.01f || Math.Abs(clampWide - expWide) > 0.01f) ok = false;
@@ -224,8 +219,8 @@ namespace Mecaota.Gunner.Tests.Models
                 }
                 Check("狙いの角度(既定60 / 射出口ごと100)", ok, sbLine.ToString());
                 var r = TwoEmitterRig(100, 0, true);
-                Check("AimLimit: [100, 0] → お尻 100、口は DefaultAimLimit 60", r.AimLimit(0) == 100f && r.AimLimit(1) == 60f && r.AimLimit(5) == 60f,
-                    $"{r.AimLimit(0)} / {r.AimLimit(1)} / 範囲外 {r.AimLimit(5)}");
+                Check("AimLimit: [100, 0] → お尻 100、口は 0(動かない)", r.AimLimit(0) == 100f && r.AimLimit(1) == 0f,
+                    $"{r.AimLimit(0)} / {r.AimLimit(1)}");
             }
 
             // 4. 最寄りの射出口: 口とお尻

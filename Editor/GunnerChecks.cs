@@ -16,7 +16,7 @@ namespace Mecaota.Gunner.EditorTools
         public string key;          // 文字列表のキー。文中の "{0}" は arg に置き換える
         public string arg;
         public Object target;       // 点検ウィンドウで行をクリックした時に選ぶもの
-        public Action fix;          // null = 直すボタンを無効で表示する
+        public Action fix;          // null = 直すボタンを出さない
 
         public GunnerCheck(GunnerCheckLevel level, string key, Object target, Action fix = null, string arg = null)
         {
@@ -90,13 +90,10 @@ namespace Mecaota.Gunner.EditorTools
                         }
                     }
                     else GUILayout.Label(c.Text, style);
-                    using (new EditorGUI.DisabledScope(c.fix == null))
+                    if (c.fix != null && GUILayout.Button(GunnerL10n.Tr("button.fix"), GUILayout.Width(60)))
                     {
-                        if (GUILayout.Button(GunnerL10n.Tr("button.fix"), GUILayout.Width(60)) && c.fix != null)
-                        {
-                            c.fix();
-                            fixedOne = true;
-                        }
+                        c.fix();
+                        fixedOne = true;
                     }
                 }
                 if (fixedOne) break;

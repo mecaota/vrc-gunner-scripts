@@ -6,6 +6,41 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added / 追加
+
+- Selecting a `GunnerEmitter` now shows an arrow in the Scene view pointing in the direction it fires (the +Z of its Target Rotation Transform). The arrow is shown in the editor only.
+- `GunnerEmitter` を選ぶと、シーンビューに射出方向(Target Rotation Transform の +Z)の矢印が出ます。エディターだけの表示です。
+
+### Changed / 変更
+
+- Emitters sharing a tip bone now each use their own `linkBones` and bone settings (`boneStrength` and the rest). The bones follow the lowest-numbered emitter in the aim set when they start to turn, and keep following it until they are back at rest. The inspector no longer shows "Same bone as emitter {0}"; every emitter shows its own settings. Values that were hidden before now take effect, so the motion may change. If you set `linkBones` and the bone settings only on the lowest-numbered emitter, as the old steps said, copy them to the other emitters that share the tip bone.
+- 同じ先端のボーンを持つ射出口でも、`linkBones` とボーン連動の設定(`boneStrength` など)は射出口ごとに効くようになりました。ボーンは、回り始める時に狙う組に入っている番号の最も若い射出口に従い、休みへ戻るまでその射出口のままです。インスペクターの「射出口 {0} と同じボーンです」の表示はなくなり、どの射出口にも設定の欄が出ます。これまで隠れていた射出口の値が効くので、動きが変わることがあります。古い手順のとおり、番号の最も若い射出口だけに `linkBones` とボーンの設定を入れていた場合は、同じ先端のボーンを持つほかの射出口にも写してください。
+- The pre-fire clip now plays to its end, and waits for `GunnerPre<n>` to be lowered, before moving to the post-fire clip (or rest); the part after the Animation Event is the delay before returning. Put the `_AnimFire` Animation Event in the middle of the clip: with no event, or with the event on the last frame, the clip leaves one clip length late, and rapid fire with the event on the last frame gets stuck until you stop firing. Press **Sync Animator** on the rig again to update existing Animator Controllers.
+- 撃つ前のクリップは、撃った後も最後まで流れ、`GunnerPre<n>` が下りるのを待ってから、後のクリップ(無ければ休み)へ移ります。Animation Event より後ろの部分が、戻るまでの遅延になります。`_AnimFire` の Animation Event は、クリップの途中に置いてください。Event が無い、または最終フレームにあると、クリップ1本分遅れて抜けます。最終フレームにあるクリップで連射すると、撃つのを止めるまで詰まります。既存の Animator Controller は、rig の「Animator にそろえる」を押し直すと反映されます。
+- The emitter list in the `GunnerRig` inspector is now a reorderable list (drag to reorder; + adds an empty row, - removes the selected row). The + button no longer creates an emitter GameObject, and the "no emitter" check no longer has a Fix button. Reordering changes the emitter numbers, so press **Sync Animator** again and update `useEmitters` on `GunnerHandController` and `emitterSwitches` and `firePayloads` on `GunnerAutoAim`. Existing scenes and values are unchanged.
+- `GunnerRig` のインスペクターの射出口の一覧を、ドラッグで並べ替えられるリストにしました(「+」で空の欄を足し、「-」で選んだ行を外します)。「+」は射出口の GameObject を作らなくなり、射出口が0件の点検の「直す」ボタンも無くなりました。並べ替えると射出口の番号が変わるので、「Animator にそろえる」を押し直し、`GunnerHandController` の `useEmitters` と `GunnerAutoAim` の `emitterSwitches`・`firePayloads` も直してください。既存のシーンと値は変わりません。
+- Checks that have no fix no longer show a disabled Fix button.
+- 直し方のない点検には、押せない「直す」ボタンを出さなくなりました。
+- The `GunnerEmitter` field `pivot` is now labelled "Target Rotation Transform" in the inspector and in the checks (the field itself is unchanged).
+- `GunnerEmitter` の `pivot` の表示名と点検の文言を「Target Rotation Transform」にしました(欄そのものは変わりません)。
+- `GunnerAutoAim` now keeps the aim and the linked bones until the pre-fire clip ends, not only until the shot. A clip longer than `fireInterval` delays the next shot until it ends, so the actual interval is the clip length plus about 0.1 s. Press **Sync Animator** again; the rig's checks warn until you do.
+- `GunnerAutoAim` は、狙いと連動するボーンを、撃った時ではなく撃つ前のクリップが終わるまで保つようになりました。クリップが `fireInterval` より長いと、次の弾はクリップが終わるまで待つので、実際の間隔は「クリップの長さ + 約0.1秒」になります。「Animator にそろえる」を押し直してください。押し直すまで、点検が警告を出します。
+- While a pre-fire clip plays, `_FireWith` on that rig is ignored until the clip ends (before, only until the Animation Event). This applies to every caller, including `GunnerHandController`, not only `GunnerAutoAim`. A clip whose `_AnimFire` does not arrive now gives up when the clip ends instead of after 3 seconds.
+- 撃つ前のクリップが流れている間は、その rig への `_FireWith` は、クリップが終わるまで受け付けません(これまでは Animation Event まで)。`GunnerAutoAim` だけでなく、`GunnerHandController` など、呼ぶ側すべてに効きます。`_AnimFire` が来ない時は、3秒後ではなく、クリップが終わった時にやめます。
+- Each emitter now plays its own `postFireClip`, also when it shares its `preFireClip` with other emitters (before, the lowest-numbered emitter's clip was used). The pre-fire state is entered from Any State, so a new shot cuts the previous post-fire clip short. Press **Sync Animator** on the rig again; the rig's checks warn until you do.
+- 同じ `preFireClip` を持つ射出口でも、`postFireClip` は射出口ごとに流れるようになりました(これまでは番号の最も若い射出口のもの)。撃つ前の状態へは Any State から入るので、新しく撃つと、前の撃った後のクリップは途中で切れます。rig の「Animator にそろえる」を押し直してください。押し直すまで、点検が警告を出します。
+- The child GameObject that `GunnerSetup` creates under each new emitter, and the one in the sample `Prefab/GunnerRig.prefab`, is now named `Target Rotation Transform` (was `Pivot`), matching the `GunnerEmitter` field label. Existing scenes keep their old names; only emitters made from now on are named differently.
+- `GunnerSetup` が射出口の下に作る子 GameObject と、サンプルの `Prefab/GunnerRig.prefab` の中の子 GameObject の名前を、`GunnerEmitter` の欄の表示名にそろえて `Target Rotation Transform`(以前は `Pivot`)にしました。既存のシーンの名前は変わりません。新しく作る射出口の名前だけが変わります。
+- The "Edit in scene" toggle on `GunnerRig` is removed. Select an emitter to see and edit its handles in the Scene view; the rig no longer draws the handles of all its emitters.
+- `GunnerRig` の「シーンで編集」のトグルを消しました。射出口を選ぶと、シーンビューに編集用のハンドルが出ます。rig を選んでも、全射出口のハンドルは出なくなりました。
+- `GunnerEmitter.streamCollide` is now a `bool` (default on), shown as a checkbox. Saved values 0 and 1 load as off and on. If a script sets it as an int, change it to `true` or `false`.
+- `GunnerEmitter.streamCollide` を `bool`(既定はオン)にし、チェックボックスで表示するようにしました。保存済みの 0 と 1 は、オフとオンとして読まれます。int で書いているスクリプトは、`true` か `false` に直してください。
+
+### Fixed / 修正
+
+- Aiming with an emitter that shares its tip bone with a lower-numbered emitter (for example when `GunnerAutoAim` picks it) no longer leaves the bones still.
+- 同じ先端のボーンを持つ射出口のうち、番号の最も若いもの以外で狙うと(`GunnerAutoAim` が別の射出口を選んだ時など)、ボーンが回らなかった不具合を直しました。
+
 ## [0.16.0] - 2026-11-22
 
 This version includes the breaking changes below (#30, including the removal of `streamJoin`) and raises the required Unity to 6000.0.67f1.

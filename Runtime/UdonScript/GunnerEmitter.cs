@@ -30,7 +30,7 @@ namespace Mecaota.Gunner
         public float streamRate = 12f;
         public int streamHitMode = GunnerStream.HitOnce;
         public float streamHitInterval = 0.25f;
-        public int streamCollide = 1;
+        public bool streamCollide = true;
 
         public Transform[] linkBones = new Transform[0];  // 根元 → 先端。先端より上は先端の祖先に限る
         public float boneStrength = 1f;

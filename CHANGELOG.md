@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added / 追加
+
+- Selecting a `GunnerEmitter` now shows an arrow in the Scene view pointing in the direction it fires (the +Z of its Target Transform). The arrow is shown in the editor only.
+- `GunnerEmitter` を選ぶと、シーンビューに射出方向(Target Transform の +Z)の矢印が出ます。エディターだけの表示です。
+
 ### Changed / 変更
 
 - Emitters sharing a tip bone now each use their own `linkBones` and bone settings (`boneStrength` and the rest). The bones follow the lowest-numbered emitter in the aim set when they start to turn, and keep following it until they are back at rest. The inspector no longer shows "Same bone as emitter {0}"; every emitter shows its own settings. Values that were hidden before now take effect, so the motion may change. If you set `linkBones` and the bone settings only on the lowest-numbered emitter, as the old steps said, copy them to the other emitters that share the tip bone.

@@ -395,7 +395,7 @@ namespace Mecaota.Gunner
                 streamRates[i] = m.streamRate;
                 streamHitModes[i] = m.streamHitMode;
                 streamHitIntervals[i] = m.streamHitInterval;
-                streamCollides[i] = m.streamCollide;
+                streamCollides[i] = m.streamCollide ? 1 : 0;
             }
         }
 

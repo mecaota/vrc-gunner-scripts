@@ -106,8 +106,7 @@ GunnerEmitter.streamHitMode.tip	1回で止める: 射出口ごとに、最初の
 GunnerEmitter.streamHitInterval	当たりの間隔(秒)	Hit interval (s)
 GunnerEmitter.streamHitInterval.tip	当たり続ける時の、射出口ごとの記録の間隔(秒)	Keep hitting: seconds between records per emitter
 GunnerEmitter.streamCollide	連射の当たり判定	Stream collision
-GunnerEmitter.streamCollide.opt	記録しない|記録する	Off|On
-GunnerEmitter.streamCollide.tip	この射出口の連射が着弾を記録するかどうか。球などが実行中に、すべての射出口の判定をまとめて切ることがある	Whether this emitter's stream records hits. A controller may switch collision off for all emitters at runtime
+GunnerEmitter.streamCollide.tip	入れると、この射出口の連射が当たった所を記録する。球などが実行中に、すべての射出口の判定をまとめて切ることがある	When on, this emitter's stream records hits. A controller may switch collision off for all emitters at runtime
 GunnerRig.boneFollow	最初から連動する	Linked at start
 GunnerRig.boneFollow.tip	開始時に、狙いに合わせてボーンを回すかどうか。実行中は BoneFollowOn / BoneFollowOff で切り替える	Whether the bones turn with the aim at start. Switch at runtime with BoneFollowOn / BoneFollowOff
 GunnerEmitter.boneStrength	連動の割合(0〜1)	Link share (0-1)

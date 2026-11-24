@@ -132,7 +132,8 @@ namespace Mecaota.Gunner.EditorTools
         void OnSceneGUI()
         {
             var muzzle = (GunnerEmitter)target;
-            DrawHandles(muzzle, RigOf(muzzle, out int index) != null ? index : -1, muzzle.transform);
+            RigOf(muzzle, out int index);
+            DrawHandles(muzzle, index);
             if (muzzle.pivot == null || Event.current.type != EventType.Repaint) return;
             var em = muzzle.pivot;
             Handles.color = RangeLine;
@@ -140,8 +141,8 @@ namespace Mecaota.Gunner.EditorTools
             Handles.ArrowHandleCap(0, em.position, em.rotation, HandleUtility.GetHandleSize(em.position) * 2f, EventType.Repaint);
         }
 
-        /// <summary>selected: 選んでいる物。それ自身が Target Rotation Transform なら、Unity のハンドルとぶつかるので姿勢のハンドルを出さない。</summary>
-        internal static void DrawHandles(GunnerEmitter muzzle, int index, Transform selected)
+        /// <summary>射出口自身が Target Rotation Transform なら、Unity のハンドルとぶつかるので姿勢のハンドルを出さない。</summary>
+        private static void DrawHandles(GunnerEmitter muzzle, int index)
         {
             if (muzzle == null || muzzle.pivot == null) return;
             var em = muzzle.pivot;
@@ -168,7 +169,7 @@ namespace Mecaota.Gunner.EditorTools
 
             if (Application.isPlaying) return;
 
-            bool own = em == selected;
+            bool own = em == muzzle.transform;
             if (!own && Tools.current == Tool.Move)
             {
                 EditorGUI.BeginChangeCheck();

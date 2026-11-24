@@ -31,6 +31,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - 同じ `preFireClip` を持つ射出口でも、`postFireClip` は射出口ごとに流れるようになりました(これまでは番号の最も若い射出口のもの)。撃つ前の状態へは Any State から入るので、新しく撃つと、前の撃った後のクリップは途中で切れます。rig の「Animator にそろえる」を押し直してください。押し直すまで、点検が警告を出します。
 - The child GameObject that `GunnerSetup` creates under each new emitter, and the one in the sample `Prefab/GunnerRig.prefab`, is now named `Target Transform` (was `Pivot`), matching the `GunnerEmitter` field label. Existing scenes keep their old names; only emitters made from now on are named differently.
 - `GunnerSetup` が射出口の下に作る子 GameObject と、サンプルの `Prefab/GunnerRig.prefab` の中の子 GameObject の名前を、`GunnerEmitter` の欄の表示名にそろえて `Target Transform`(以前は `Pivot`)にしました。既存のシーンの名前は変わりません。新しく作る射出口の名前だけが変わります。
+- The "Edit in scene" toggle on `GunnerRig` is removed. Select an emitter to see and edit its handles in the Scene view; the rig no longer draws the handles of all its emitters.
+- `GunnerRig` の「シーンで編集」のトグルを消しました。射出口を選ぶと、シーンビューに編集用のハンドルが出ます。rig を選んでも、全射出口のハンドルは出なくなりました。
 
 ### Fixed / 修正
 

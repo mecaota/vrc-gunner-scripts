@@ -145,7 +145,6 @@ namespace Mecaota.Gunner.EditorTools
         {
             if (muzzle == null || muzzle.pivot == null) return;
             var em = muzzle.pivot;
-            bool edit = EditorPrefs.GetBool(GunnerRigEditor.HandlesPref, true) && !Application.isPlaying;
             Vector3 pos = em.position;
             Vector3 fwd = em.forward;
             Vector3 up = em.up;
@@ -167,7 +166,7 @@ namespace Mecaota.Gunner.EditorTools
             Handles.DrawDottedLine(pos, pos + fwd * range, 4f);
             Handles.Label(pos + up * size * 0.3f, (index >= 0 ? index + " " : "") + muzzle.name);
 
-            if (!edit) return;
+            if (Application.isPlaying) return;
 
             bool own = em == selected;
             if (!own && Tools.current == Tool.Move)

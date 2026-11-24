@@ -4,11 +4,10 @@ using UnityEngine;
 
 namespace Mecaota.Gunner.EditorTools
 {
-    /// <summary>GunnerRig のインスペクタ(射出口の一覧と共通の設定)と、全部の射出口のシーンのハンドル。</summary>
+    /// <summary>GunnerRig のインスペクタ(射出口の一覧と共通の設定)。</summary>
     [CustomEditor(typeof(GunnerRig)), CanEditMultipleObjects]
     public class GunnerRigEditor : GunnerInspectorBase
     {
-        internal const string HandlesPref = "Mecaota.Gunner.ShowHandles";
         ReorderableList list;
 
         void OnEnable()
@@ -47,14 +46,6 @@ namespace Mecaota.Gunner.EditorTools
                 }
                 else
                     EditorGUILayout.HelpBox(T("GunnerRig.emitters.multi"), MessageType.Info);
-                EditorGUILayout.Space();
-                bool show = EditorPrefs.GetBool(HandlesPref, true);
-                bool next = EditorGUILayout.Toggle(Label("GunnerRig.showHandles"), show);
-                if (next != show)
-                {
-                    EditorPrefs.SetBool(HandlesPref, next);
-                    SceneView.RepaintAll();
-                }
             }
 
             if (Foldout("GunnerRig.section.shot"))
@@ -90,14 +81,6 @@ namespace Mecaota.Gunner.EditorTools
                 return new GUIContent(i.ToString(), EditorGUIUtility.IconContent(icon).image, c.Text);
             }
             return new GUIContent(i.ToString());
-        }
-
-        void OnSceneGUI()
-        {
-            var rig = (GunnerRig)target;
-            if (rig == null || rig.muzzles == null) return;
-            for (int i = 0; i < rig.muzzles.Length; i++)
-                GunnerEmitterEditor.DrawHandles(rig.muzzles[i], i, rig.transform);
         }
     }
 }

@@ -104,8 +104,9 @@ namespace Mecaota.Gunner.EditorTools
                     enter.canTransitionToSelf = false;
                     enter.AddCondition(AnimatorConditionMode.If, 0f, ParamPrefix + i);
                 }
-                // 条件を付けない: 撃った後もクリップを最後まで流す。
-                Timing(preState.AddTransition(after), true, 0.05f);
+                // 終わっても GunnerPre が真のまま後へ移ると、Any State からもう一度入るので、下りるまで待つ。
+                var leave = Timing(preState.AddTransition(after), true, 0.05f);
+                foreach (int i in byPost) leave.AddCondition(AnimatorConditionMode.IfNot, 0f, ParamPrefix + i);
             }
         }
 

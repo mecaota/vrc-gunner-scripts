@@ -133,6 +133,11 @@ namespace Mecaota.Gunner.EditorTools
         {
             var muzzle = (GunnerEmitter)target;
             DrawHandles(muzzle, RigOf(muzzle, out int index) != null ? index : -1, muzzle.transform);
+            if (muzzle.pivot == null || Event.current.type != EventType.Repaint) return;
+            var em = muzzle.pivot;
+            Handles.color = RangeLine;
+            // 移動ハンドルの Z 軸と重ならないよう、それより長くする。
+            Handles.ArrowHandleCap(0, em.position, em.rotation, HandleUtility.GetHandleSize(em.position) * 2f, EventType.Repaint);
         }
 
         /// <summary>selected: 選んでいる物。それ自身が Target Transform なら、Unity のハンドルとぶつかるので姿勢のハンドルを出さない。</summary>

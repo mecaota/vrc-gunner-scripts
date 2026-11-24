@@ -13,7 +13,6 @@ namespace Mecaota.Gunner.EditorTools
 
         void OnEnable()
         {
-            var rig = (GunnerRig)target;
             list = new ReorderableList(serializedObject, serializedObject.FindProperty("muzzles"), true, false, true, true)
             {
                 drawElementCallback = (rect, i, active, focused) =>
@@ -24,11 +23,7 @@ namespace Mecaota.Gunner.EditorTools
                     EditorGUI.PropertyField(rect, element, RowLabel(element.objectReferenceValue as GunnerEmitter, i));
                 },
                 onCanAddCallback = l => l.count < GunnerRig.MaxEmitters,
-                onAddCallback = l =>
-                {
-                    GunnerSetup.AddEmitter(rig, null, rig.transform.position, rig.transform.rotation);
-                    GUIUtility.ExitGUI();
-                },
+                onAddCallback = l => GunnerEditorUtil.Append(l.serializedProperty, null),
                 // 「外す」は一覧から外すだけで、GameObject は消さない。
                 onRemoveCallback = l =>
                 {

@@ -35,8 +35,7 @@ namespace Mecaota.Gunner.EditorTools
         {
             var muzzles = rig.muzzles ?? new GunnerEmitter[0];
             if (muzzles.Length == 0)
-                into.Add(new GunnerCheck(E.Error, "check.rig.no_emitter", rig,
-                    () => GunnerSetup.AddEmitter(rig, null, rig.transform.position, rig.transform.rotation)));
+                into.Add(new GunnerCheck(E.Error, "check.rig.no_emitter", rig));
             if (muzzles.Length > GunnerRig.MaxEmitters)
                 into.Add(new GunnerCheck(E.Error, "check.rig.too_many_emitters", rig, null, GunnerRig.MaxEmitters.ToString()));
             if (muzzles.Contains(null))

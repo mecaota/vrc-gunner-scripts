@@ -7,7 +7,7 @@ button.fix	直す	Fix
 button.recheck	再点検	Recheck
 check.all_ok	問題は見つかりませんでした。	No problems found.
 check.l10n.missing	文字列の抜け: {0}	Missing text: {0}
-check.rig.no_emitter	射出口がありません	No emitter
+check.rig.no_emitter	射出口がありません。一覧の「+」で欄を足し、GunnerEmitter を付けた GameObject を入れてください	No emitter. Add a row with + in the emitter list and assign a GameObject with a GunnerEmitter
 check.rig.too_many_emitters	射出口が多すぎます(最大 {0})	Too many emitters (max {0})
 check.rig.null_emitter	射出口の欄に空きがあります	An emitter slot is empty
 check.rig.no_particle	射出口 {0} にパーティクルがありません(当たりは記録されます)	Emitter {0} has no particles (hits are still recorded)

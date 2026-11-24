@@ -140,7 +140,7 @@ namespace Mecaota.Gunner.EditorTools
             Handles.ArrowHandleCap(0, em.position, em.rotation, HandleUtility.GetHandleSize(em.position) * 2f, EventType.Repaint);
         }
 
-        /// <summary>selected: 選んでいる物。それ自身が Target Transform なら、Unity のハンドルとぶつかるので姿勢のハンドルを出さない。</summary>
+        /// <summary>selected: 選んでいる物。それ自身が Target Rotation Transform なら、Unity のハンドルとぶつかるので姿勢のハンドルを出さない。</summary>
         internal static void DrawHandles(GunnerEmitter muzzle, int index, Transform selected)
         {
             if (muzzle == null || muzzle.pivot == null) return;

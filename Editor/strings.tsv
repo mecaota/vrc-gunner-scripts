@@ -26,9 +26,9 @@ check.rig.chain_long	連動するボーンが6本を超えています: {0}	More
 check.rig.impact_in_rig	着弾音の音源 {0} が rig の配下にあります。当たった点へ動かす音源が rig につられて動いたり、rig の一部を動かしたりするので、rig の外に置いてください	Impact sound source {0} is under the rig. It would follow the rig, or move part of the rig when moved to the hit point, so place it outside the rig
 check.rig.angle_over	狙える角度が180度を超えています: {0}	Aim limit is over 180 degrees: {0}
 check.rig.angle_link	狙える角度が170度を超えています。真後ろ近くでボーンが跳ぶことがあるので、連動する射出口は170度までにしてください: {0}	Aim limit over 170 degrees. Bones can jump near straight back, so keep linked emitters at 170 degrees or less: {0}
-check.emitter.no_pivot	Target Transform がありません	No Target Transform set
+check.emitter.no_pivot	Target Rotation Transform がありません	No Target Rotation Transform set
 check.emitter.unlisted	どの GunnerRig の射出口の一覧にも入っていません	Not in any GunnerRig's emitter list
-check.emitter.no_constraint	Target Transform が先端のボーン {0} の下になく、VRC Parent Constraint もないため、ボーンに追従しません	The Target Transform is not under the tip bone {0} and there is no VRC Parent Constraint, so it does not follow the bone
+check.emitter.no_constraint	Target Rotation Transform が先端のボーン {0} の下になく、VRC Parent Constraint もないため、ボーンに追従しません	The Target Rotation Transform is not under the tip bone {0} and there is no VRC Parent Constraint, so it does not follow the bone
 check.emitter.constraint_no_source	VRC Parent Constraint の Source が空です	The VRC Parent Constraint has an empty source
 check.emitter.no_anim_fire	撃つ前のクリップ {0} に Animation Event(SendCustomEvent、_AnimFire)がないため、撃てません	Pre-fire clip {0} has no Animation Event (SendCustomEvent, _AnimFire), so it never shoots
 check.rig.animator_unsynced	Animator のレイヤーやパラメーターが、射出口のクリップと合っていません。「Animator にそろえる」を押してください	The Animator's layers or parameters do not match the emitters' clips. Press Sync Animator
@@ -55,7 +55,7 @@ GunnerRig.emitters.numberNote	並べ替え・外すと射出口の番号が変�
 GunnerRig.emitters.multi	複数選択中は射出口を編集できません	Emitters cannot be edited while multiple objects are selected
 GunnerEmitter.about	射出口1つの設定。GunnerRig の射出口の一覧に入れて使う。	Settings for one emitter. Add it to a GunnerRig's emitter list.
 GunnerEmitter.owner	射出口 {0}(GunnerRig: {1})	Emitter {0} (GunnerRig: {1})
-GunnerEmitter.pivot	Target Transform	Target Transform
+GunnerEmitter.pivot	Target Rotation Transform	Target Rotation Transform
 GunnerEmitter.pivot.tip	狙いで回し、弾を出す Transform。+Z が撃つ向きの初期値	The Transform the aim turns and shots leave from. +Z is the rest direction
 GunnerEmitter.linkBones	連動ボーン(根元 → 先端)	Linked bones (root → tip)
 GunnerEmitter.linkBones.tip	狙いで回すボーン。最後が先端で、ほかは先端の祖先に限る。狙いの角度をボーンの数で等分して回す。空なら連動しない	Bones the aim turns. The last one is the tip; the others must be its ancestors. The aim angle is split evenly across the bones. Empty = no link

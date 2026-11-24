@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed / 修正
+
+- A single shot requested while the post-fire clip was blending back to rest could miss its signal and not fire. The switch to rest is now instant, so end `postFireClip` in the rest pose. Press **Sync Animator** on the rig again.
+- 撃った後のクリップから休みへ移る間に撃つと、合図を逃して撃たないことがあったのを直しました。休みへは一瞬で切り替わるので、`postFireClip` は休みの姿勢で終えてください。rig の「Animator にそろえる」を押し直してください。
+
 ## [0.18.0] - 2026-11-25
 
 This version renames `GunnerRig` to `GunnerController` and merges `GunnerStream` into it, replaces the emitter's `pivot`, `linkBones` and limits with one list, and removes the `GameObject > Gunner` menus. Existing scenes need the steps below.

@@ -95,7 +95,8 @@ namespace Mecaota.Gunner.EditorTools
                 {
                     after = machine.AddState(byPost.Key.name);
                     after.motion = byPost.Key;
-                    Timing(after.AddTransition(rest), true, 0.1f);
+                    // 0 秒: この遷移の間は Any State から入れず、次の撃つ前が遅れて合図を逃す。
+                    Timing(after.AddTransition(rest), true, 0f);
                 }
                 // Any State から入る: 後のクリップの途中でもすぐ撃つ前へ移る(rig はクリップの長さだけ待つので、入るのが遅れると合図を逃す)。
                 foreach (int i in byPost)

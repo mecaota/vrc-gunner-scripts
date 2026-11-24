@@ -197,7 +197,7 @@ GunnerPickupInput の「Pickup」と、GunnerHandController の「移動ロッ�
 | 連射の量(個/秒)(Stream rate (/s)) | 1 秒に出す量 | 12 |
 | 連射の当たり方(Stream hits) | 当たったあとの動き | 1回で止める |
 | 当たりの間隔(秒)(Hit interval (s)) | 当たりを数える間隔(秒) | 0.25 |
-| 連射の当たり判定(Stream collision) | 当たりを記録するか | 記録する |
+| 連射の当たり判定(Stream collision) | 入れると当たりを記録する | 入れる |
 
 連射の弾を 1 本の線につなげるかどうかは、GunnerEmitter ではなく、その射出口の `Shot` の Particle System で決めます。
 

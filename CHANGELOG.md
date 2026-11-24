@@ -33,6 +33,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `GunnerSetup` が射出口の下に作る子 GameObject と、サンプルの `Prefab/GunnerRig.prefab` の中の子 GameObject の名前を、`GunnerEmitter` の欄の表示名にそろえて `Target Rotation Transform`(以前は `Pivot`)にしました。既存のシーンの名前は変わりません。新しく作る射出口の名前だけが変わります。
 - The "Edit in scene" toggle on `GunnerRig` is removed. Select an emitter to see and edit its handles in the Scene view; the rig no longer draws the handles of all its emitters.
 - `GunnerRig` の「シーンで編集」のトグルを消しました。射出口を選ぶと、シーンビューに編集用のハンドルが出ます。rig を選んでも、全射出口のハンドルは出なくなりました。
+- `GunnerEmitter.streamCollide` is now a `bool` (default on), shown as a checkbox. Saved values 0 and 1 load as off and on. If a script sets it as an int, change it to `true` or `false`.
+- `GunnerEmitter.streamCollide` を `bool`(既定はオン)にし、チェックボックスで表示するようにしました。保存済みの 0 と 1 は、オフとオンとして読まれます。int で書いているスクリプトは、`true` か `false` に直してください。
 
 ### Fixed / 修正
 

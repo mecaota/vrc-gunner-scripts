@@ -89,11 +89,8 @@ GunnerController.playerRadius	体の太さ	Body radius
 GunnerController.playerRadius.tip	目の高さに対する割合	Share of the eye height
 GunnerEmitter.streamRate	連射の量(個/秒)	Stream rate (/s)
 GunnerEmitter.streamRate.tip	1秒あたりのパーティクルの数	Particles per second
-GunnerEmitter.streamHitMode	連射の当たり方	Stream hits
-GunnerEmitter.streamHitMode.opt	1回で止める|当たり続ける	Stop at first hit|Keep hitting
-GunnerEmitter.streamHitMode.tip	1回で止める: 射出口ごとに、最初の当たりだけを記録する。当たり続ける: 「当たりの間隔」ごとに記録する	Stop at first hit: each emitter records only its first hit. Keep hitting: records once per Hit interval
 GunnerEmitter.streamHitInterval	当たりの間隔(秒)	Hit interval (s)
-GunnerEmitter.streamHitInterval.tip	当たり続ける時の、射出口ごとの記録の間隔(秒)	Keep hitting: seconds between records per emitter
+GunnerEmitter.streamHitInterval.tip	連射が当たり続ける間の、射出口ごとの記録の間隔(秒)	Seconds between hit records per emitter while the stream keeps hitting
 GunnerEmitter.streamCollide	連射の当たり判定	Stream collision
 GunnerEmitter.streamCollide.tip	入れると、この射出口の連射が当たった所を記録する。球などが実行中に、すべての射出口の判定をまとめて切ることがある	When on, this emitter's stream records hits. A controller may switch collision off for all emitters at runtime
 GunnerController.boneFollow	最初から連動する	Linked at start
@@ -134,7 +131,7 @@ GunnerHandController.payload	payload	Payload
 GunnerHandController.payload.tip	rig へそのまま渡す整数。意味は受け手が決める	Integer passed to the rig as is; the receivers decide what it means
 GunnerHandController.collideMode	当たるとき	When it hits
 GunnerHandController.collideMode.opt	いつも|離してから	Always|After release
-GunnerHandController.collideMode.tip	離してから: 押している間は素通りし、離した後に最初に触れた所へ1回だけ当たる	After release: passes through while held, then hits the first thing touched once
+GunnerHandController.collideMode.tip	離してから: 押している間は素通りし、離した後に触れた所へ「当たりの間隔」ごとに当たる	After release: passes through while held, then hits what it touches once per Hit interval
 GunnerHandController.releaseWindow	離した後の時間	Release window
 GunnerHandController.releaseWindow.tip	離してから当たれる最大の秒数	Seconds the released stream may still hit
 GunnerHandController.followBone	ボーン連動を入れる	Turn bone link on

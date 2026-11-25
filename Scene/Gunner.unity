@@ -1531,10 +1531,6 @@ PrefabInstance:
       value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6213007740579973437, guid: 06e6e4e46c3a27b4f877b5c6ad3ccb6c, type: 3}
-      propertyPath: streamHitMode
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6213007740579973437, guid: 06e6e4e46c3a27b4f877b5c6ad3ccb6c, type: 3}
       propertyPath: streamHitInterval
       value: 0.2
       objectReference: {fileID: 0}

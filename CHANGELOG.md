@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-11-25
+
 ### Breaking changes / 互換性のない変更
 
 - Streams always keep hitting. `GunnerEmitter.streamHitMode` (Stop at first hit / Keep hitting) and `GunnerController.HitOnce` / `HitKeep` are removed. An emitter set to Stop at first hit (the old default) now records a hit every `streamHitInterval` while its particles touch something, and the first hit no longer clears its flying particles. If the Collision module of the emitter's particle system is on, the particles now stop when they hit a wall. Depending on the layers in **Collides With**, they may also stop at the shooter's body. Unity drops the old value; there is nothing to move. Scripts that use the removed constants must drop them.

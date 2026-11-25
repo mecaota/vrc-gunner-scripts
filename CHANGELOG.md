@@ -16,6 +16,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `preFireClip` のある射出口の連射は、単発と同じく撃つ前のクリップを待つようにしました。`_AnimFire` の合図で、この端末でもほかの人の画面でも連射が始まります。合図の前に `StopStream()` を呼ぶと、連射は始まりません。合図までは `_IsStreaming()` が偽、`_IsPreFiring()` が真です。ほかの撃つ前のクリップが流れている間の連射の開始は、単発と同じく、射出口に撃つ前のクリップがあれば受け付けず、無ければすぐ始まります。以前は、連射は撃つ前のクリップを使わずにすぐ始まっていました。
 - Restarting a stream does not reset the hit interval: it keeps counting, so the first hit after releasing and pressing again can come up to `streamHitInterval` later.
 - 連射を始め直しても、当たりの間隔は数え直しません。間隔は数え続けるので、離して押し直した後の最初の当たりは、最大で `streamHitInterval` 遅れることがあります。
+- Turning collision back on with `_SetCollision(true)` does not reset the hit interval either.
+- `_SetCollision(true)` で当たり判定を入れ直しても、当たりの間隔は数え直しません。
 
 ## [0.18.1] - 2026-11-25
 

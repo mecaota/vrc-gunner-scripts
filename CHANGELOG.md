@@ -12,8 +12,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - 連射は、いつも当たり続けるようにしました。`GunnerEmitter.streamHitMode`(1回で止める/当たり続ける)と、`GunnerController.HitOnce`・`HitKeep` を削除しました。「1回で止める」(以前の初期値)にしていた射出口は、粒子が何かに触れている間、「当たりの間隔」(`streamHitInterval`)ごとに当たりを記録するようになります。最初の当たりで、飛んでいる粒子が消えることもなくなります。射出口の Particle System で Collision を入れていると、粒子はその当たり判定で壁に止まるようになります。**Collides With** の層によっては、撃つ人の体でも止まります。古い値は Unity が捨てるので、移す作業はありません。削除した定数を使っているスクリプトは直してください。
 - A hand controller whose **When it hits** is After release now hits every Hit interval after the trigger is released (until the Release window ends or nothing is in flight), instead of once. A hit may be recorded beyond a wall even after the visible particle has vanished at it.
 - 手持ちの発射器で「当たるとき」を「離してから」にしていると、離した後に1回だけでなく、「当たりの間隔」ごとに当たるようになります(「離した後の時間」が過ぎるか、飛んでいる粒子が無くなるまで)。見た目の粒子が壁で消えても、壁の向こうで当たりが記録されることがあります。
-- A stream on an emitter with `preFireClip` now waits for the clip like a single shot: the stream starts at `_AnimFire`, on this device and on others. `StopStream()` before that cancels it. Until then `_IsStreaming()` is false and `_IsPreFiring()` is true. While a pre-fire clip plays, new stream starts are ignored. Before, a stream ignored the pre-fire clip and started at once.
-- `preFireClip` のある射出口の連射は、単発と同じく撃つ前のクリップを待つようにしました。`_AnimFire` の合図で、この端末でもほかの人の画面でも連射が始まります。合図の前に `StopStream()` を呼ぶと、連射は始まりません。合図までは `_IsStreaming()` が偽、`_IsPreFiring()` が真です。撃つ前のクリップが流れている間は、新しい連射の開始も受け付けません。以前は、連射は撃つ前のクリップを使わずにすぐ始まっていました。
+- A stream on an emitter with `preFireClip` now waits for the clip like a single shot: the stream starts at `_AnimFire`, on this device and on others. `StopStream()` before that cancels it. Until then `_IsStreaming()` is false and `_IsPreFiring()` is true. While another pre-fire clip plays, a stream start follows the single-shot rule: it is ignored if its emitters have a pre-fire clip, and starts at once if they have none. Before, a stream ignored the pre-fire clip and started at once.
+- `preFireClip` のある射出口の連射は、単発と同じく撃つ前のクリップを待つようにしました。`_AnimFire` の合図で、この端末でもほかの人の画面でも連射が始まります。合図の前に `StopStream()` を呼ぶと、連射は始まりません。合図までは `_IsStreaming()` が偽、`_IsPreFiring()` が真です。ほかの撃つ前のクリップが流れている間の連射の開始は、単発と同じく、射出口に撃つ前のクリップがあれば受け付けず、無ければすぐ始まります。以前は、連射は撃つ前のクリップを使わずにすぐ始まっていました。
+- Restarting a stream does not reset the hit interval: it keeps counting, so the first hit after releasing and pressing again can come up to `streamHitInterval` later.
+- 連射を始め直しても、当たりの間隔は数え直しません。間隔は数え続けるので、離して押し直した後の最初の当たりは、最大で `streamHitInterval` 遅れることがあります。
 
 ## [0.18.1] - 2026-11-25
 

@@ -859,17 +859,21 @@ namespace Mecaota.Gunner
 
         /// <summary>
         /// payload 付きで連射を始める(rig を取る)。狙う組に連射の射出口が無ければ何もしない。撃つ前のクリップがあれば、単発と同じく
-        /// その合図で始める(待っている間とクリップが終わるまでは、ほかの撃つ前のクリップを受け付けない)。もう連射中なら payload と狙いだけを送り直す。
-        /// streamMine && !streamOn = 合図を待っている。
+        /// その合図で始める。ほかの撃つ前のクリップが流れている間は、単発と同じく、クリップのある連射は受け付けず、クリップの無い連射はすぐ始める。
+        /// もう連射中なら payload と狙いだけを送り直す。合図を待っている間(streamMine && !streamOn)は payload だけを差し替える。
         /// </summary>
         public void _StartStreamWith(int payload)
         {
             Init();
             int set = StreamSet(aimEmitters);
-            if (set == 0 || (preEmitter >= 0 && !streamMine) || !TakeOwnership()) return;
+            if (set == 0 || !TakeOwnership()) return;
+            if (streamMine && !streamOn) { streamPayload = payload; return; }
+            bool busy = preEmitter >= 0;
+            bool wait = !streamOn && WaitPreFire(set, payload);
+            if (busy && wait) return;
             streamMine = true;
             streamPayload = payload;
-            if (streamOn || (preEmitter < 0 && !WaitPreFire(set, payload))) StreamGo();
+            if (!wait) StreamGo();
         }
 
         private void StreamGo()

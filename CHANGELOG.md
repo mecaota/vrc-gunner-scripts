@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.19.1] - 2026-11-25
+
+### Fixed / 修正
+
+- The bundled UdonSharp program assets were stale, so the Inspector showed errors in Play mode. They are rebuilt from the current scripts.
+- 同梱の UdonSharp プログラムの .asset が古く、Play 中に Inspector でエラーが出ていたのを直しました。今のスクリプトから作り直しています。
+
 ## [0.19.0] - 2026-11-25
 
 ### Breaking changes / 互換性のない変更

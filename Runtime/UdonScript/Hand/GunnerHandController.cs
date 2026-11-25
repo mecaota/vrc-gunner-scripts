@@ -17,7 +17,7 @@ namespace Mecaota.Gunner
 
         public int emitter = -1;                  // -1 = 全部の射出口。番号なら持っている間の狙う組をその射出口だけにする(useEmitters より優先)
         public int payload;                       // rig へそのまま渡す。意味は弾が決める
-        // AfterRelease: 押している間の連射は何でも素通りし、放すとその粒子が最初に触れたものに1回当たる。
+        // AfterRelease: 押している間の連射は何でも素通りし、放した粒子は射出口の「当たりの間隔」ごとに当たる。
         public int collideMode = CollideAlways;
         public float releaseWindow = 3f;          // AfterRelease: 放した粒子がまだ当たってよい秒数の上限
         public bool followBone;                   // 持っている間は rig のボーンの連動を on にする(終わったら戻す)
@@ -81,7 +81,7 @@ namespace Mecaota.Gunner
                 rig._SetCollision(false);
             }
             rig._StartStreamWith(payload);
-            streaming = rig._IsStreaming();
+            streaming = true;  // 撃つ前のクリップの合図を待っている間は、まだ連射中ではない
         }
 
         public void _OnUseUp()
@@ -91,7 +91,7 @@ namespace Mecaota.Gunner
             if (!streaming) return;
             streaming = false;
             if (rig == null) return;
-            StopOwnStream();
+            rig.StopStream();
             if (collideMode == CollideAfterRelease) OpenWindow(true);
         }
 
@@ -146,7 +146,7 @@ namespace Mecaota.Gunner
             }
             if (wasStreaming)
             {
-                StopOwnStream();
+                rig.StopStream();
                 if (collideMode == CollideAfterRelease) OpenWindow(false);
             }
             else if (collideMode == CollideAfterRelease && !closePending) rig._SetCollision(true);
@@ -155,12 +155,6 @@ namespace Mecaota.Gunner
                 boneChanged = false;
                 if (Networking.IsOwner(rig.gameObject)) rig._SetBoneFollow(false);
             }
-        }
-
-        // この端末が動かしている連射だけ: その後で rig を取った人のものには触らない。
-        private void StopOwnStream()
-        {
-            if (Networking.IsOwner(rig.gameObject) && rig._IsStreaming()) rig.StopStream();
         }
 
         // ---------------- 毎フレーム ----------------

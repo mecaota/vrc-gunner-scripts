@@ -39,7 +39,7 @@ namespace Mecaota.Gunner.EditorTools
             Fields("impactSource", "impactClip", "impactMinInterval", "impactParticle", "impactBurst");
 
             Heading("GunnerEmitter.card.stream");
-            Fields("streamRate", "streamHitMode", "streamHitInterval", "streamCollide");
+            Fields("streamRate", "streamHitInterval", "streamCollide");
 
             DrawFollow(muzzle);
         }
